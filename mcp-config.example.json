@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "giftconcierge": {
+      "command": "node",
+      "args": ["D:/corporategifting/mcp-server.js"],
+      "env": {
+        "GIFTCONCIERGE_API_URL": "http://localhost:8080/api",
+        "GIFTCONCIERGE_APP_URL": "http://localhost:3000",
+        "GIFTCONCIERGE_MCP_KEY": "change-this-for-shared-environments"
+      }
+    }
+  }
+}
