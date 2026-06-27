@@ -297,7 +297,8 @@ const GiftCheckoutPage = () => {
             
             if (verifyRes.data.success) {
               const result = await checkout({
-                address, city, state, pincode,
+                address: `${address}\n(Contact: ${recipientPhone}${recipientEmail ? `, ${recipientEmail}` : ''})`,
+                city, state, pincode,
                 courierType: courierType === 'Instant' ? deliveryService : courierType,
                 grandTotal,
                 transactionId: response.razorpay_payment_id,

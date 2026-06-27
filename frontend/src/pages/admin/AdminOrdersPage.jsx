@@ -347,7 +347,7 @@ const AdminOrdersPage = () => {
                     </div>
                   )}
                   {order.deliveryAddress && (
-                    <div style={{ marginTop: '2px', fontSize: '0.72rem', color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    <div style={{ marginTop: '2px', fontSize: '0.72rem', color: 'var(--text-secondary)', maxWidth: '200px', whiteSpace: 'pre-wrap' }}
                       title={order.deliveryAddress}>
                       📍 {order.deliveryAddress}
                     </div>
