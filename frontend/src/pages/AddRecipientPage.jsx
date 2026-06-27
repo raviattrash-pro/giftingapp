@@ -218,7 +218,7 @@ const AddRecipientPage = () => {
             <Sparkles size={20} className="text-gradient-purple" /> Initial Gifting Target
           </h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-            Optionally schedule their very first gifting event. If specified, GiftConcierge will configure a dedicated countdown reminder.
+            Optionally schedule their very first gifting event. If specified, Louvion Hampers will configure a dedicated countdown reminder.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

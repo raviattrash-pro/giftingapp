@@ -485,8 +485,8 @@ INSERT INTO gifts (name, description, category, subcategory, price, image_url, e
 -- =============================================
 -- Default passwords are both 'password123' (BCrypt hash below)
 INSERT INTO users (email, password_hash, full_name, role, premium, feature_flags) VALUES
-('concierge@corporategifts.com', '$2a$10$qyFh/uH7u7M1sOshk2w8oexw/uA6Pj2c7XGvO1QnK4K1F2S/eK7mK', 'Concierge Admin', 'ADMIN', TRUE, '{"aiAssistant":true,"budgetPlanner":true,"groupGifting":true,"secretSanta":true,"giftStories":true,"futureLocker":true}'),
-('alex.jones@acme.com', '$2a$10$qyFh/uH7u7M1sOshk2w8oexw/uA6Pj2c7XGvO1QnK4K1F2S/eK7mK', 'Alex Jones', 'USER', TRUE, '{"aiAssistant":true,"budgetPlanner":true,"groupGifting":true,"secretSanta":true,"giftStories":true,"futureLocker":true}');
+('concierge@corporategifts.com', '$2a$10$qyFh/uH7u7M1sOshk2w8oexw/uA6Pj2c7XGvO1QnK4K1F2S/eK7mK', 'Concierge Admin', 'ADMIN', TRUE, '{"aiAssistant":false,"budgetPlanner":false,"groupGifting":false,"secretSanta":false,"giftStories":false,"futureLocker":false}'),
+('alex.jones@acme.com', '$2a$10$qyFh/uH7u7M1sOshk2w8oexw/uA6Pj2c7XGvO1QnK4K1F2S/eK7mK', 'Alex Jones', 'USER', TRUE, '{"aiAssistant":false,"budgetPlanner":false,"groupGifting":false,"secretSanta":false,"giftStories":false,"futureLocker":false}');
 
 -- =============================================
 -- SEED DATA: Soft Toys, Showpieces, Wallhangings, Mugs

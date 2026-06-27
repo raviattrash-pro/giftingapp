@@ -176,7 +176,7 @@ const GiftFinderQuizPage = () => {
             >
               <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-title)' }}>Allocated Gifting Budget</h3>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Set the price boundaries. GiftConcierge will optimize recommendations to maximize relationship impact.
+                Set the price boundaries. Louvion Hampers will optimize recommendations to maximize relationship impact.
               </p>
 
               <div style={{ padding: '10px 0', textAlign: 'center' }}>
@@ -251,11 +251,17 @@ const GiftFinderQuizPage = () => {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img 
-                            src={item.gift.image} 
-                            alt={item.gift.name} 
-                            style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                          />
+                          <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                            {(item.gift.image?.includes('video/') || item.gift.image?.match(/\.(mp4|webm)$/i)) ? (
+                              <video src={item.gift.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                            ) : (
+                              <img 
+                                src={item.gift.image} 
+                                alt={item.gift.name} 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            )}
+                          </div>
                           <div>
                             <h4 style={{ fontSize: '0.88rem', fontWeight: 600 }}>{item.gift.name}</h4>
                             <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-primary)' }}>

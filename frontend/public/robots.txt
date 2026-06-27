@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /settings/
+Allow: /
+
+Sitemap: https://louvionhampers.com/sitemap.xml

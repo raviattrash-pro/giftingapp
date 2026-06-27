@@ -65,9 +65,21 @@ const GiftCheckoutPage = () => {
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
+  const [hideDeliveryCharges, setHideDeliveryCharges] = useState(false);
 
   useEffect(() => {
     fetchPaymentSettings();
+    const fetchDeliveryConfig = async () => {
+      try {
+        const confRes = await api.get('/config/DELIVERY_CHARGES_HIDDEN');
+        if (confRes.data && confRes.data.value === 'true') {
+          setHideDeliveryCharges(true);
+        } else {
+          setHideDeliveryCharges(false);
+        }
+      } catch (err) {}
+    };
+    fetchDeliveryConfig();
   }, [fetchPaymentSettings]);
 
   useEffect(() => {
@@ -115,6 +127,15 @@ const GiftCheckoutPage = () => {
           } else {
               if (!isBulk) { adminSharePct = 0; userSharePct = 100; }
           }
+
+          try {
+            const confRes = await api.get('/config/DELIVERY_CHARGES_HIDDEN');
+            if (confRes.data && confRes.data.value === 'true') {
+              userSharePct = 0;
+              adminSharePct = 100;
+              setHideDeliveryCharges(true);
+            }
+          } catch(e) {}
 
           // Calculate standard courier charges using Zone-based pricing
           let delhiveryTotal = 45, blueDartTotal = 65, dtdcTotal = 40, indiaPostTotal = 35;
@@ -193,9 +214,11 @@ const GiftCheckoutPage = () => {
   const tax = Math.round(cart.reduce((acc, item) => acc + (item.gift.price * (item.gift.luxuryTax ?? 8) / 100) * item.quantity, 0));
   
   const courierMultiplier = courierType === 'Hand-delivery' ? 1.0 : courierType === 'Priority' ? 0.5 : 0.2;
-  const deliveryCost = courierType === 'Instant' 
+  const baseDeliveryCost = courierType === 'Instant' 
     ? deliveryCharge 
     : Math.round(cart.reduce((acc, item) => acc + (item.gift.courierHandling ?? 50) * courierMultiplier * item.quantity, 0));
+  
+  const deliveryCost = hideDeliveryCharges ? 0 : baseDeliveryCost;
   
   const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const grandTotal = Math.max(0, subtotal + tax + deliveryCost - discount);
@@ -236,7 +259,7 @@ const GiftCheckoutPage = () => {
     }
   };
 
-  const handleCheckoutSubmit = async (e) => {
+  const handleRazorpayPayment = async (e) => {
     if (e) e.preventDefault();
     if (cart.length === 0) return;
 
@@ -250,54 +273,84 @@ const GiftCheckoutPage = () => {
       return;
     }
 
-    if (!transactionId || !paymentScreenshot) {
-      addToast('Please provide transaction ID and payment receipt screenshot.', 'error');
-      return;
-    }
-
     try {
-      const result = await checkout({
-        address,
-        city,
-        state,
-        pincode,
-        courierType: courierType === 'Instant' ? deliveryService : courierType,
-        grandTotal,
-        transactionId,
-        paymentScreenshot,
-        recipientName,
-        recipientPhone,
-        recipientEmail,
-        personalMessage,
-        scheduledDate,
-        scheduledTime,
-        deliveryService: courierType === 'Instant' ? deliveryService : null,
-        deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
-        adminDeliveryCharge: courierType === 'Instant' ? adminDeliveryCharge : 0
+      const { data: order } = await api.post('/orders/razorpay/create-order', {
+        amount: grandTotal,
+        currency: 'INR',
+        receipt: 'rcpt_' + Date.now()
       });
 
-      // Log the transactions into local budget store for visualization
-      cart.forEach(item => {
-        const rec = recipients.find(r => r.id === item.recipientId);
-        addTransaction({
-          recipientName: recipientName || (rec ? rec.name : 'Corporate Distribution'),
-          giftName: item.gift.name,
-          cost: item.gift.price * item.quantity,
-          category: item.gift.category,
-          relationship: rec ? rec.relationship : 'External client'
-        });
-      });
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'placeholder_key_id',
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Louvion Hampers',
+        description: 'Premium Corporate Gifting',
+        order_id: order.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await api.post('/orders/razorpay/verify', {
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            
+            if (verifyRes.data.success) {
+              const result = await checkout({
+                address, city, state, pincode,
+                courierType: courierType === 'Instant' ? deliveryService : courierType,
+                grandTotal,
+                transactionId: response.razorpay_payment_id,
+                paymentScreenshot: 'razorpay_verified_payment',
+                recipientName, recipientPhone, recipientEmail,
+                personalMessage, scheduledDate, scheduledTime,
+                deliveryService: courierType === 'Instant' ? deliveryService : null,
+                deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
+                adminDeliveryCharge: courierType === 'Instant' ? adminDeliveryCharge : 0
+              });
 
-      setOrderId(result.orderId);
-      setCheckoutComplete(true);
-      addToast('Your corporate order has been submitted for payment verification.', 'success');
-      addNotification(
-        'order_placed',
-        'Order Submitted!',
-        `Order #${result.orderId} has been placed and is pending payment verification.`
-      );
+              cart.forEach(item => {
+                const rec = recipients.find(r => r.id === item.recipientId);
+                addTransaction({
+                  recipientName: recipientName || (rec ? rec.name : 'Corporate Distribution'),
+                  giftName: item.gift.name,
+                  cost: item.gift.price * item.quantity,
+                  category: item.gift.category,
+                  relationship: rec ? rec.relationship : 'External client'
+                });
+              });
+
+              setOrderId(result.orderId || response.razorpay_order_id);
+              setCheckoutComplete(true);
+              addToast('Payment successful! Your order has been placed.', 'success');
+              addNotification(
+                'order_placed',
+                'Order Submitted!',
+                `Order #${result.orderId || response.razorpay_order_id} has been placed successfully.`
+              );
+            }
+          } catch (err) {
+            addToast('Payment verification failed. Please contact support.', 'error');
+          }
+        },
+        prefill: {
+          name: recipientName,
+          email: recipientEmail,
+          contact: recipientPhone
+        },
+        theme: {
+          color: '#b76e79'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        addToast(response.error.description || 'Payment Failed', 'error');
+      });
+      rzp.open();
+
     } catch (err) {
-      addToast(err.response?.data?.message || 'Checkout failed. Please try again.', 'error');
+      addToast(err.response?.data?.message || 'Could not initiate Razorpay payment', 'error');
     }
   };
 
@@ -385,11 +438,17 @@ const GiftCheckoutPage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img 
-                          src={item.gift.imageUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=300'} 
-                          alt={item.gift.name} 
-                          style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-                        />
+                        <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                          {(item.gift.imageUrl?.includes('video/') || item.gift.imageUrl?.match(/\.(mp4|webm)$/i)) ? (
+                            <video src={item.gift.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                          ) : (
+                            <img 
+                              src={item.gift.imageUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=300'} 
+                              alt={item.gift.name} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          )}
+                        </div>
                         <div>
                           <h4 style={{ fontSize: '0.85rem', fontWeight: 600 }}>{item.gift.name}</h4>
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -502,48 +561,50 @@ const GiftCheckoutPage = () => {
                     required
                   />
                 </div>
-                {/* Delivery Mode Toggle */}
-                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Delivery Mode
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div 
-                      onClick={() => { setCourierType('Instant'); setDeliveryService('PORTER'); }}
-                      style={{
-                        padding: '12px',
-                        borderRadius: 'var(--radius-md)',
-                        background: courierType === 'Instant' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${courierType === 'Instant' ? '#b76e79' : 'var(--glass-border)'}`,
-                        color: courierType === 'Instant' ? 'var(--text-primary)' : 'var(--text-muted)',
-                        fontWeight: courierType === 'Instant' ? 600 : 400,
-                        fontSize: '0.82rem',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      ⚡ Instant Auto-Booking
+                {hideDeliveryCharges && (
+                  <>
+                    {/* Delivery Mode Toggle */}
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        Delivery Mode
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div 
+                          onClick={() => { setCourierType('Instant'); setDeliveryService('PORTER'); }}
+                          style={{
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            background: courierType === 'Instant' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${courierType === 'Instant' ? '#b76e79' : 'var(--glass-border)'}`,
+                            color: courierType === 'Instant' ? 'var(--text-primary)' : 'var(--text-muted)',
+                            fontWeight: courierType === 'Instant' ? 600 : 400,
+                            fontSize: '0.82rem',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          ⚡ Instant Auto-Booking
+                        </div>
+                        <div 
+                          onClick={() => { setCourierType('Standard'); setDeliveryService('DELHIVERY'); }}
+                          style={{
+                            padding: '12px',
+                            borderRadius: 'var(--radius-md)',
+                            background: courierType === 'Standard' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${courierType === 'Standard' ? '#b76e79' : 'var(--glass-border)'}`,
+                            color: courierType === 'Standard' ? 'var(--text-primary)' : 'var(--text-muted)',
+                            fontWeight: courierType === 'Standard' ? 600 : 400,
+                            fontSize: '0.82rem',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          📦 Standard Shipping
+                        </div>
+                      </div>
                     </div>
-                    <div 
-                      onClick={() => { setCourierType('Standard'); setDeliveryService('DELHIVERY'); }}
-                      style={{
-                        padding: '12px',
-                        borderRadius: 'var(--radius-md)',
-                        background: courierType === 'Standard' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${courierType === 'Standard' ? '#b76e79' : 'var(--glass-border)'}`,
-                        color: courierType === 'Standard' ? 'var(--text-primary)' : 'var(--text-muted)',
-                        fontWeight: courierType === 'Standard' ? 600 : 400,
-                        fontSize: '0.82rem',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      📦 Standard Shipping
-                    </div>
-                  </div>
-                </div>
 
                 {courierType === 'Instant' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
@@ -863,7 +924,9 @@ const GiftCheckoutPage = () => {
                     )}
                   </div>
                 )}
-              </div>
+              </>
+            )}
+          </div>
             </Card>
 
             {/* Personal Message */}
@@ -986,7 +1049,7 @@ const GiftCheckoutPage = () => {
                 </div>
               </div>
 
-              {/* UPI QR Payment Configuration */}
+              {/* Razorpay Payment Integration */}
               <div 
                 style={{
                   borderTop: '1px solid var(--glass-border)',
@@ -996,87 +1059,20 @@ const GiftCheckoutPage = () => {
                   gap: '16px'
                 }}
               >
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff' }}>Manual UPI Payment</h4>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff' }}>Secure Payment</h4>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Scan the QR code below or use the UPI ID to transfer <strong>₹{grandTotal}</strong>, then upload details.
+                  Pay securely using Razorpay. All major Credit Cards, UPI, and Net Banking supported.
                 </p>
-
-                {paymentSettings && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
-                    {paymentSettings.qrCodeUrl && (
-                      <img 
-                        src={paymentSettings.qrCodeUrl} 
-                        alt="UPI QR Code" 
-                        style={{ width: '150px', height: '150px', objectFit: 'contain', borderRadius: 'var(--radius-sm)', border: '4px solid #fff' }}
-                      />
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', width: '100%', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.78rem', fontFamily: 'monospace', color: '#ffffff', wordBreak: 'break-all' }}>
-                        {paymentSettings.upiId}
-                      </span>
-                      <button 
-                        type="button"
-                        onClick={copyUpiId}
-                        style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                      >
-                        <Copy size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* UTR Input */}
-                <Input
-                  label="Transaction Ref No / UTR"
-                  placeholder="e.g. 123456789012"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  required
-                />
-
-                {/* Screenshot Upload */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Upload Payment Screenshot <span style={{ color: 'var(--color-danger)' }}>*</span>
-                  </span>
-                  <label 
-                    style={{
-                      border: '1px dashed var(--glass-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.01)',
-                      textAlign: 'center'
-                    }}
-                    className="glass-card-hover"
-                  >
-                    <Upload size={20} style={{ color: 'var(--color-primary)' }} />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      {screenshotName || 'Click to select payment screenshot'}
-                    </span>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleScreenshotChange} 
-                      style={{ display: 'none' }}
-                      required
-                    />
-                  </label>
-                </div>
               </div>
 
               <Button 
-                onClick={handleCheckoutSubmit} 
+                onClick={handleRazorpayPayment} 
                 variant="primary" 
                 icon={ArrowRight} 
                 style={{ width: '100%', marginTop: '10px' }}
-                disabled={!transactionId || !paymentScreenshot || !recipientName || !address || !city || !pincode}
+                disabled={!recipientName || !address || !city || !pincode}
               >
-                Submit Payment for Verification
+                Pay ₹{grandTotal} with Razorpay
               </Button>
             </Card>
           </div>

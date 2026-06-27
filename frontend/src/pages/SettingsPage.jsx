@@ -30,12 +30,12 @@ const SettingsPage = () => {
 
   // Retrieve current feature flags
   const flags = user?.featureFlags || user?.toggles || {
-    aiAssistant: true,
-    budgetPlanner: true,
-    groupGifting: true,
-    secretSanta: true,
-    giftStories: true,
-    futureLocker: true
+    aiAssistant: false,
+    budgetPlanner: false,
+    groupGifting: false,
+    secretSanta: false,
+    giftStories: false,
+    futureLocker: false
   };
 
   useEffect(() => {
@@ -334,78 +334,7 @@ const SettingsPage = () => {
           </Card>
         )}
 
-        {user?.role === 'ADMIN' && (
-          <Card hoverable={false} style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-              <CreditCard size={20} color="var(--color-accent)" />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Payment Gateway Configuration</h3>
-            </div>
 
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-              Setup manual payment details (UPI ID & QR Code) to accept orders from users.
-            </p>
-
-            <form onSubmit={handleSavePaymentSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <Input
-                label="Admin UPI ID"
-                placeholder="gifting@upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                required
-              />
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>QR Code Image</span>
-                <label 
-                  style={{
-                    border: '1px dashed var(--glass-border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.01)',
-                    textAlign: 'center'
-                  }}
-                  className="glass-card-hover"
-                >
-                  <Upload size={20} style={{ color: 'var(--color-primary)' }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {qrFileName || 'Click to select new QR code image'}
-                  </span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleQrUpload} 
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </div>
-
-              {qrCodeUrl && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Current QR Code Preview:</span>
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="UPI QR Code preview" 
-                    style={{ width: '120px', height: '120px', objectFit: 'contain', border: '2px solid #fff', borderRadius: '4px' }}
-                  />
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                loading={paymentLoading}
-                variant="primary"
-                style={{ width: '100%', marginTop: '12px' }}
-              >
-                Save Gateway Settings
-              </Button>
-            </form>
-          </Card>
-        )}
       </div>
 
     </div>

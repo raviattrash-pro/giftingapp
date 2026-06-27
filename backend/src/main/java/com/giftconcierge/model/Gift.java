@@ -2,10 +2,11 @@ package com.giftconcierge.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "gifts")
-public class Gift {
+public class Gift implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +30,7 @@ public class Gift {
     @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private String imageUrl;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "gift_additional_images", joinColumns = @JoinColumn(name = "gift_id"))
     @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private java.util.List<String> additionalImages = new java.util.ArrayList<>();

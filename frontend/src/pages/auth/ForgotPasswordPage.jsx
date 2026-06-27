@@ -24,7 +24,7 @@ const ForgotPasswordPage = () => {
   const handleRequestCode = async (e) => {
     e.preventDefault();
     if (!email) {
-      setErrors({ email: 'Corporate email is required' });
+      setErrors({ email: 'Email is required' });
       return;
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
@@ -118,13 +118,13 @@ const ForgotPasswordPage = () => {
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', marginBottom: '8px' }}>Reset Portal Password</h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-              Enter your registered corporate email address and we will dispatch a secure 6-digit verification code.
+              Enter your registered email address and we will dispatch a secure 6-digit verification code.
             </p>
           </div>
 
           <form onSubmit={handleRequestCode}>
             <Input
-              label="Corporate Email Address"
+              label="Email"
               type="email"
               icon={Mail}
               placeholder="you@company.com"

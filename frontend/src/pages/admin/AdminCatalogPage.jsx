@@ -22,7 +22,8 @@ const AdminCatalogPage = () => {
     storeAddress: '100 Main St, Mumbai',
     splitPercentage: '50',
     bulkThreshold: '2000',
-    bufferDays: '1'
+    bufferDays: '1',
+    hideDeliveryCharges: false
   });
 
   const fetchConfigs = async () => {
@@ -32,8 +33,12 @@ const AdminCatalogPage = () => {
         storeAddress: data.STORE_ADDRESS || '100 Main St, Mumbai',
         splitPercentage: data.DELIVERY_SPLIT_PERCENTAGE || '50',
         bulkThreshold: data.BULK_ORDER_THRESHOLD || '2000',
-        bufferDays: data.DELIVERY_BUFFER_DAYS || '1'
+        bufferDays: data.DELIVERY_BUFFER_DAYS || '1',
+        hideDeliveryCharges: data.DELIVERY_CHARGES_HIDDEN === 'true'
       });
+      if (data.WRAPPING_OPTIONS) {
+        setWrappingStyles(JSON.parse(data.WRAPPING_OPTIONS));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -45,6 +50,7 @@ const AdminCatalogPage = () => {
       await api.put('/admin/app-config/DELIVERY_SPLIT_PERCENTAGE', { value: deliverySettings.splitPercentage });
       await api.put('/admin/app-config/BULK_ORDER_THRESHOLD', { value: deliverySettings.bulkThreshold });
       await api.put('/admin/app-config/DELIVERY_BUFFER_DAYS', { value: deliverySettings.bufferDays });
+      await api.put('/admin/app-config/DELIVERY_CHARGES_HIDDEN', { value: deliverySettings.hideDeliveryCharges ? 'true' : 'false' });
       addToast('Delivery settings saved successfully.', 'success');
     } catch (err) {
       addToast('Failed to save delivery settings.', 'error');
@@ -56,6 +62,51 @@ const AdminCatalogPage = () => {
   const [editingCategoryIndex, setEditingCategoryIndex] = useState(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState('');
   const [newCategoryType, setNewCategoryType] = useState('All');
+
+  // --- Wrapping Styles State ---
+  const [wrappingStyles, setWrappingStyles] = useState([
+    { label: 'Classic Parchment Paper & Wax Seal', price: 0 },
+    { label: 'Premium Silk Furoshiki Wrap', price: 1200 },
+    { label: 'Midnight Blue Velvet Box', price: 800 }
+  ]);
+  const [newWrapLabel, setNewWrapLabel] = useState('');
+  const [newWrapPrice, setNewWrapPrice] = useState('');
+  const [editingWrapIndex, setEditingWrapIndex] = useState(null);
+
+  const handleSaveWrappingStyles = async (stylesToSave = wrappingStyles) => {
+    try {
+      await api.put('/admin/app-config/WRAPPING_OPTIONS', { value: JSON.stringify(stylesToSave) });
+      addToast('Wrapping styles saved successfully.', 'success');
+    } catch (err) {
+      addToast('Failed to save wrapping styles.', 'error');
+    }
+  };
+
+  const handleAddWrappingStyle = () => {
+    if (!newWrapLabel.trim()) return;
+    const updated = [...wrappingStyles, { label: newWrapLabel.trim(), price: Number(newWrapPrice) || 0 }];
+    setWrappingStyles(updated);
+    setNewWrapLabel('');
+    setNewWrapPrice('');
+    handleSaveWrappingStyles(updated);
+  };
+
+  const handleDeleteWrappingStyle = (index) => {
+    const updated = [...wrappingStyles];
+    updated.splice(index, 1);
+    setWrappingStyles(updated);
+    handleSaveWrappingStyles(updated);
+  };
+
+  const handleUpdateWrappingStyle = (index, newLabel, newPrice) => {
+    if (!newLabel.trim()) return;
+    const updated = [...wrappingStyles];
+    updated[index].label = newLabel.trim();
+    updated[index].price = Number(newPrice) || 0;
+    setWrappingStyles(updated);
+    setEditingWrapIndex(null);
+    handleSaveWrappingStyles(updated);
+  };
 
   useEffect(() => {
     if (navCategories) setLocalNavCategories(navCategories);
@@ -148,9 +199,10 @@ const AdminCatalogPage = () => {
     setFormData({
       name: '',
       price: '',
-    category: categories[0],
-    description: '',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=600',
+      category: categories[0],
+      description: '',
+      image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=600',
+      additionalImages: '',
       stock: '20',
       tags: 'premium, curated',
       luxuryTax: '8',
@@ -168,6 +220,7 @@ const AdminCatalogPage = () => {
       category: product.category,
       description: product.description,
       image: product.image,
+      additionalImages: Array.isArray(product.additionalImages) ? product.additionalImages.join(', ') : '',
       stock: String(product.stock ?? 20),
       tags: Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || ''),
       luxuryTax: String(product.luxuryTax ?? 8),
@@ -205,6 +258,17 @@ const AdminCatalogPage = () => {
       .split(',')
       .map((t) => t.trim())
       .filter((t) => t !== '');
+      
+    const rawParts = (formData.additionalImages || '').split(',');
+    const additionalImagesArray = [];
+    for (let i = 0; i < rawParts.length; i++) {
+      let part = rawParts[i].trim();
+      if (part.startsWith('data:') && !part.includes('base64,') && i + 1 < rawParts.length) {
+        part = part + ',' + rawParts[i + 1].trim();
+        i++;
+      }
+      if (part) additionalImagesArray.push(part);
+    }
 
     const productPayload = {
       name: formData.name.trim(),
@@ -212,6 +276,7 @@ const AdminCatalogPage = () => {
       category: formData.category,
       description: formData.description.trim(),
       image: formData.image.trim(),
+      additionalImages: additionalImagesArray.length > 0 ? additionalImagesArray : [],
       stock: parseInt(formData.stock, 10),
       tags: tagsArray,
       luxuryTax: parseFloat(formData.luxuryTax || 8),
@@ -307,6 +372,68 @@ const AdminCatalogPage = () => {
         </Card>
       </div>
 
+      {/* Delivery Settings Management */}
+      <Card hoverable={false} style={{ padding: '16px' }}>
+        <div className="flex-between" style={{ marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Delivery & Logistics Settings</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Configure fee splits, bulk order thresholds, and store location for courier auto-booking.</p>
+          </div>
+          <Button variant="primary" onClick={handleSaveDeliverySettings}>
+            Save Settings
+          </Button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <Input 
+            label="Admin Origin Address" 
+            placeholder="e.g. 100 Main St, Mumbai" 
+            value={deliverySettings.storeAddress} 
+            onChange={(e) => setDeliverySettings({...deliverySettings, storeAddress: e.target.value})} 
+            icon={MapPin}
+          />
+          <Input 
+            label="Admin Fee Split (%)" 
+            type="number"
+            placeholder="e.g. 50" 
+            value={deliverySettings.splitPercentage} 
+            onChange={(e) => setDeliverySettings({...deliverySettings, splitPercentage: e.target.value})} 
+            icon={Percent}
+            title="Percentage of the delivery fee paid by the Admin for normal orders."
+          />
+          <Input 
+            label="Bulk Order Threshold (₹)" 
+            type="number"
+            placeholder="e.g. 2000" 
+            value={deliverySettings.bulkThreshold} 
+            onChange={(e) => setDeliverySettings({...deliverySettings, bulkThreshold: e.target.value})} 
+            icon={IndianRupee}
+            title="Orders above this amount get free delivery for customers within 3km."
+          />
+          <Input 
+            label="Standard Buffer Days" 
+            type="number"
+            placeholder="e.g. 1" 
+            value={deliverySettings.bufferDays} 
+            onChange={(e) => setDeliverySettings({...deliverySettings, bufferDays: e.target.value})} 
+            icon={Clock}
+            title="Days added to standard delivery for locations beyond 3km."
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
+            <input 
+              type="checkbox" 
+              id="hideDeliveryToggle"
+              checked={deliverySettings.hideDeliveryCharges}
+              onChange={(e) => setDeliverySettings({...deliverySettings, hideDeliveryCharges: e.target.checked})}
+              style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+            />
+            <label htmlFor="hideDeliveryToggle" style={{ fontSize: '0.88rem', color: 'var(--text-primary)', cursor: 'pointer', flex: 1, userSelect: 'none' }}>
+              Hide Delivery Charges from Users (Show as ₹0)
+            </label>
+          </div>
+        </div>
+      </Card>
+
       {/* Navigation Events Management */}
       <Card hoverable={false} style={{ padding: '16px' }}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
@@ -401,53 +528,85 @@ const AdminCatalogPage = () => {
         </div>
       </Card>
 
-      {/* Delivery Settings Management */}
+      {/* Wrapping Styles Management */}
       <Card hoverable={false} style={{ padding: '16px' }}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Delivery & Logistics Settings</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Configure fee splits, bulk order thresholds, and store location for courier auto-booking.</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Wrapping Style Management</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Add, edit, or delete custom wrapping styles and their prices.</p>
           </div>
-          <Button variant="primary" onClick={handleSaveDeliverySettings}>
-            Save Settings
+        </div>
+
+        {/* Add new wrapping style row */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '24px', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
+              label="Style Label" 
+              placeholder="e.g. Premium Silk Furoshiki Wrap" 
+              value={newWrapLabel} 
+              onChange={(e) => setNewWrapLabel(e.target.value)} 
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
+              label="Price (₹)" 
+              type="number"
+              placeholder="e.g. 1200" 
+              value={newWrapPrice} 
+              onChange={(e) => setNewWrapPrice(e.target.value)} 
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <Button variant="secondary" onClick={handleAddWrappingStyle} style={{ height: '42px', padding: '0 24px' }}>
+            Add Style
           </Button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          <Input 
-            label="Admin Origin Address" 
-            placeholder="e.g. 100 Main St, Mumbai" 
-            value={deliverySettings.storeAddress} 
-            onChange={(e) => setDeliverySettings({...deliverySettings, storeAddress: e.target.value})} 
-            icon={MapPin}
-          />
-          <Input 
-            label="Admin Fee Split (%)" 
-            type="number"
-            placeholder="e.g. 50" 
-            value={deliverySettings.splitPercentage} 
-            onChange={(e) => setDeliverySettings({...deliverySettings, splitPercentage: e.target.value})} 
-            icon={Percent}
-            title="Percentage of the delivery fee paid by the Admin for normal orders."
-          />
-          <Input 
-            label="Bulk Order Threshold (₹)" 
-            type="number"
-            placeholder="e.g. 2000" 
-            value={deliverySettings.bulkThreshold} 
-            onChange={(e) => setDeliverySettings({...deliverySettings, bulkThreshold: e.target.value})} 
-            icon={IndianRupee}
-            title="Orders above this amount get free delivery for customers within 3km."
-          />
-          <Input 
-            label="Standard Buffer Days" 
-            type="number"
-            placeholder="e.g. 1" 
-            value={deliverySettings.bufferDays} 
-            onChange={(e) => setDeliverySettings({...deliverySettings, bufferDays: e.target.value})} 
-            icon={Clock}
-            title="Days added to standard delivery for locations beyond 3km."
-          />
+        {/* List of wrapping styles */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {wrappingStyles.map((wrap, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.01)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', flexWrap: 'wrap', gap: '12px' }}>
+              {editingWrapIndex === index ? (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+                  <input 
+                    type="text" 
+                    defaultValue={wrap.label} 
+                    id={`edit-wrap-label-${index}`}
+                    style={{ flex: 1, minWidth: '150px', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  />
+                  <input 
+                    type="number" 
+                    defaultValue={wrap.price} 
+                    id={`edit-wrap-price-${index}`}
+                    style={{ flex: 1, minWidth: '100px', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  />
+                  <Button variant="primary" onClick={() => handleUpdateWrappingStyle(index, document.getElementById(`edit-wrap-label-${index}`).value, document.getElementById(`edit-wrap-price-${index}`).value)} style={{ padding: '8px 16px' }}>Save</Button>
+                  <Button variant="glass" onClick={() => setEditingWrapIndex(null)} style={{ padding: '8px 16px' }}>Cancel</Button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {wrap.label}
+                    </span>
+                    <Badge variant="info">₹{wrap.price}</Badge>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => setEditingWrapIndex(index)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px' }}>
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => handleDeleteWrappingStyle(index)} style={{ background: 'rgba(255,0,127,0.05)', border: '1px solid rgba(255,0,127,0.2)', borderRadius: '4px', color: 'var(--color-danger)', cursor: 'pointer', padding: '6px' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+          {wrappingStyles.length === 0 && (
+             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No wrapping styles defined.</div>
+          )}
         </div>
       </Card>
 
@@ -543,11 +702,13 @@ const AdminCatalogPage = () => {
                   {/* Product Details */}
                   <td style={{ padding: '16px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--glass-border)' }} 
-                      />
+                      <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                        {(product.image?.includes('video/') || product.image?.match(/\.(mp4|webm)$/i)) ? (
+                          <video src={product.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                        ) : (
+                          <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        )}
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{product.name}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -709,6 +870,50 @@ const AdminCatalogPage = () => {
                       setFormErrors({ ...formErrors, image: '' });
                     };
                     reader.readAsDataURL(file);
+                  }
+                }}
+                style={{
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '6px',
+                  cursor: 'pointer',
+                  flex: 1
+                }}
+              />
+            </div>
+            
+            <Input
+              label="Additional Media URLs (Comma Separated, max 10, mp4 supported)"
+              placeholder="https://...image2.jpg, https://...video.mp4"
+              value={formData.additionalImages}
+              onChange={(e) => setFormData({ ...formData, additionalImages: e.target.value })}
+              icon={Image}
+            />
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '-8px' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-title)' }}>Or upload from device:</span>
+              <input
+                type="file"
+                accept="image/*,video/mp4,video/webm"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  if (files.length > 0) {
+                    const readPromises = files.map(file => {
+                      return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                      });
+                    });
+                    
+                    Promise.all(readPromises).then(results => {
+                      const existingUrls = formData.additionalImages ? formData.additionalImages + ',' : '';
+                      setFormData({ ...formData, additionalImages: existingUrls + results.join(',') });
+                    });
                   }
                 }}
                 style={{

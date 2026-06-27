@@ -18,14 +18,26 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
+    public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
+        MessageResponse response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/verify-registration")
+    public ResponseEntity<AuthResponse> verifyRegistration(@RequestBody java.util.Map<String, String> request) {
+        AuthResponse response = authService.verifyRegistration(request.get("email"), request.get("otp"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = authService.googleLogin(request);
         return ResponseEntity.ok(response);
     }
 

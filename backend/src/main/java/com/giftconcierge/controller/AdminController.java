@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ public class AdminController {
     // --- GIFTS CATALOG MANAGEMENT ---
 
     @PostMapping("/gifts")
+    @CacheEvict(value = "gifts", allEntries = true)
     public ResponseEntity<Gift> createGift(@RequestBody Gift gift) {
         if (gift.getStock() == null) {
             gift.setStock(20);
@@ -62,6 +64,7 @@ public class AdminController {
     }
 
     @PutMapping("/gifts/{id}")
+    @CacheEvict(value = "gifts", allEntries = true)
     public ResponseEntity<Gift> updateGift(@PathVariable Long id, @RequestBody Gift giftDetails) {
         Gift gift = giftRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Gift", "id", id));
@@ -72,6 +75,7 @@ public class AdminController {
         gift.setSubcategory(giftDetails.getSubcategory());
         gift.setPrice(giftDetails.getPrice());
         gift.setImageUrl(giftDetails.getImageUrl());
+        gift.setAdditionalImages(giftDetails.getAdditionalImages());
         gift.setEmotionTags(giftDetails.getEmotionTags());
         gift.setIsDigital(giftDetails.getIsDigital());
         gift.setIsExperience(giftDetails.getIsExperience());
@@ -99,6 +103,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/gifts/{id}")
+    @CacheEvict(value = "gifts", allEntries = true)
     public ResponseEntity<MessageResponse> deleteGift(@PathVariable Long id) {
         Gift gift = giftRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Gift", "id", id));

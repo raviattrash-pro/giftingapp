@@ -20,8 +20,11 @@ public class User {
     @Column(unique = true, nullable = false, length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
+
+    @Column(name = "auth_provider", length = 20)
+    private String authProvider = "LOCAL";
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
@@ -47,6 +50,15 @@ public class User {
     @Column(name = "feature_flags")
     @Convert(converter = FeatureFlagsConverter.class)
     private Map<String, Boolean> featureFlags;
+
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified = false;
+
+    @Column(name = "otp_code", length = 10)
+    private String otpCode;
+
+    @Column(name = "otp_expiry_time")
+    private LocalDateTime otpExpiryTime;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -74,10 +86,11 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String email, String passwordHash, String fullName, String phone, String avatarUrl, String timezone, BigDecimal monthlyBudget, Boolean premium, String role, Map<String, Boolean> featureFlags, LocalDateTime createdAt, LocalDateTime updatedAt, List<Recipient> recipients, List<Address> addresses, List<Wishlist> wishlists, List<GiftOrder> giftOrders, List<Budget> budgets) {
+    public User(Long id, String email, String passwordHash, String authProvider, String fullName, String phone, String avatarUrl, String timezone, BigDecimal monthlyBudget, Boolean premium, String role, Map<String, Boolean> featureFlags, Boolean isVerified, String otpCode, LocalDateTime otpExpiryTime, LocalDateTime createdAt, LocalDateTime updatedAt, List<Recipient> recipients, List<Address> addresses, List<Wishlist> wishlists, List<GiftOrder> giftOrders, List<Budget> budgets) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.authProvider = authProvider;
         this.fullName = fullName;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
@@ -86,6 +99,9 @@ public class User {
         this.premium = premium;
         this.role = role;
         this.featureFlags = featureFlags;
+        this.isVerified = isVerified;
+        this.otpCode = otpCode;
+        this.otpExpiryTime = otpExpiryTime;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.recipients = recipients;
@@ -117,6 +133,14 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getAuthProvider() {
+        return this.authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
     }
 
     public String getFullName() {
@@ -181,6 +205,30 @@ public class User {
 
     public void setFeatureFlags(Map<String, Boolean> featureFlags) {
         this.featureFlags = featureFlags;
+    }
+
+    public Boolean getIsVerified() {
+        return this.isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public String getOtpCode() {
+        return this.otpCode;
+    }
+
+    public void setOtpCode(String otpCode) {
+        this.otpCode = otpCode;
+    }
+
+    public LocalDateTime getOtpExpiryTime() {
+        return this.otpExpiryTime;
+    }
+
+    public void setOtpExpiryTime(LocalDateTime otpExpiryTime) {
+        this.otpExpiryTime = otpExpiryTime;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -255,18 +303,21 @@ public class User {
                 java.util.Objects.equals(premium, user.premium) &&
                 java.util.Objects.equals(role, user.role) &&
                 java.util.Objects.equals(featureFlags, user.featureFlags) &&
+                java.util.Objects.equals(isVerified, user.isVerified) &&
+                java.util.Objects.equals(otpCode, user.otpCode) &&
+                java.util.Objects.equals(otpExpiryTime, user.otpExpiryTime) &&
                 java.util.Objects.equals(createdAt, user.createdAt) &&
                 java.util.Objects.equals(updatedAt, user.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(id, email, passwordHash, fullName, phone, avatarUrl, timezone, monthlyBudget, premium, role, featureFlags, createdAt, updatedAt);
+        return java.util.Objects.hash(id, email, passwordHash, fullName, phone, avatarUrl, timezone, monthlyBudget, premium, role, featureFlags, isVerified, otpCode, otpExpiryTime, createdAt, updatedAt);
     }
 
     @Override
     public String toString() {
-        return "User(id=" + id + ", email=" + email + ", passwordHash=" + passwordHash + ", fullName=" + fullName + ", phone=" + phone + ", avatarUrl=" + avatarUrl + ", timezone=" + timezone + ", monthlyBudget=" + monthlyBudget + ", premium=" + premium + ", role=" + role + ", featureFlags=" + featureFlags + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ")";
+        return "User(id=" + id + ", email=" + email + ", passwordHash=" + passwordHash + ", fullName=" + fullName + ", phone=" + phone + ", avatarUrl=" + avatarUrl + ", timezone=" + timezone + ", monthlyBudget=" + monthlyBudget + ", premium=" + premium + ", role=" + role + ", featureFlags=" + featureFlags + ", isVerified=" + isVerified + ", otpCode=" + otpCode + ", otpExpiryTime=" + otpExpiryTime + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ")";
     }
 
     public static UserBuilder builder() {
@@ -277,6 +328,7 @@ public class User {
         private Long id;
         private String email;
         private String passwordHash;
+        private String authProvider = "LOCAL";
         private String fullName;
         private String phone;
         private String avatarUrl;
@@ -285,6 +337,9 @@ public class User {
         private Boolean premium = false;
         private String role = "USER";
         private Map<String, Boolean> featureFlags;
+        private Boolean isVerified = false;
+        private String otpCode;
+        private LocalDateTime otpExpiryTime;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private List<Recipient> recipients = new ArrayList<>();
@@ -308,6 +363,11 @@ public class User {
 
         public UserBuilder passwordHash(String passwordHash) {
             this.passwordHash = passwordHash;
+            return this;
+        }
+
+        public UserBuilder authProvider(String authProvider) {
+            this.authProvider = authProvider;
             return this;
         }
 
@@ -351,6 +411,21 @@ public class User {
             return this;
         }
 
+        public UserBuilder isVerified(Boolean isVerified) {
+            this.isVerified = isVerified;
+            return this;
+        }
+
+        public UserBuilder otpCode(String otpCode) {
+            this.otpCode = otpCode;
+            return this;
+        }
+
+        public UserBuilder otpExpiryTime(LocalDateTime otpExpiryTime) {
+            this.otpExpiryTime = otpExpiryTime;
+            return this;
+        }
+
         public UserBuilder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -387,7 +462,7 @@ public class User {
         }
 
         public User build() {
-            return new User(id, email, passwordHash, fullName, phone, avatarUrl, timezone, monthlyBudget, premium, role, featureFlags, createdAt, updatedAt, recipients, addresses, wishlists, giftOrders, budgets);
+            return new User(id, email, passwordHash, authProvider, fullName, phone, avatarUrl, timezone, monthlyBudget, premium, role, featureFlags, isVerified, otpCode, otpExpiryTime, createdAt, updatedAt, recipients, addresses, wishlists, giftOrders, budgets);
         }
     }
 }

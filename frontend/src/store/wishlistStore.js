@@ -6,7 +6,7 @@ const MOCK_WISHLISTS = [
     title: 'Executive Client Lounges',
     description: 'Curated premium items for our corporate suite environments.',
     isPublic: true,
-    shareableLink: 'https://giftconcierge.app/wishlists/wl_1',
+    shareableLink: 'https://louvionhampers.app/wishlists/wl_1',
     items: [
       { id: 'gift_1', name: 'Baccarat Masséna Crystal Champagne Flutes (Set of 2)', price: 380, image: 'https://images.unsplash.com/photo-1574926053821-79c5e338a933?auto=format&fit=crop&q=80&w=600' },
       { id: 'gift_7', name: 'Dom Pérignon Vintage 2013 Millésimé Champagne', price: 320, image: 'https://images.unsplash.com/photo-1594487523522-f18c6730894b?auto=format&fit=crop&q=80&w=600' }
@@ -17,7 +17,7 @@ const MOCK_WISHLISTS = [
     title: 'Developer Rewards & Milestones',
     description: 'High-quality technical accessories and wellness items.',
     isPublic: false,
-    shareableLink: 'https://giftconcierge.app/wishlists/wl_2',
+    shareableLink: 'https://louvionhampers.app/wishlists/wl_2',
     items: [
       { id: 'gift_8', name: 'Keychron Q1 Max Custom Mechanical Keyboard', price: 230, image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&q=80&w=600' },
       { id: 'gift_4', name: 'Aesop Resurrection Aromatique Hand Care Trio', price: 130, image: 'https://images.unsplash.com/photo-1608248597481-496100c8c836?auto=format&fit=crop&q=80&w=600' }
@@ -37,7 +37,7 @@ export const useWishlistStore = create((set, get) => ({
       title,
       description,
       isPublic,
-      shareableLink: `https://giftconcierge.app/wishlists/${newId}`,
+      shareableLink: `https://louvionhampers.app/wishlists/${newId}`,
       items: []
     };
     set((state) => ({ wishlists: [...state.wishlists, newWishlist] }));

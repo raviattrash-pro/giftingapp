@@ -55,6 +55,7 @@ const toGiftPayload = (product) => {
     subcategory: product.subcategory || '',
     price: Number(product.price),
     imageUrl: product.imageUrl || product.image,
+    additionalImages: product.additionalImages || [],
     emotionTags: tags.join(','),
     isDigital: !!product.isDigital,
     isExperience: !!product.isExperience,

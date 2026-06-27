@@ -37,14 +37,16 @@ public class OrderService {
     private final GiftOrderRepository giftOrderRepository;
     private final GiftRepository giftRepository;
     private final DeliveryService deliveryService;
+    private final NotificationService notificationService;
 
-    public OrderService(UserRepository userRepository, RecipientRepository recipientRepository, OccasionRepository occasionRepository, GiftOrderRepository giftOrderRepository, GiftRepository giftRepository, DeliveryService deliveryService) {
+    public OrderService(UserRepository userRepository, RecipientRepository recipientRepository, OccasionRepository occasionRepository, GiftOrderRepository giftOrderRepository, GiftRepository giftRepository, DeliveryService deliveryService, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.recipientRepository = recipientRepository;
         this.occasionRepository = occasionRepository;
         this.giftOrderRepository = giftOrderRepository;
         this.giftRepository = giftRepository;
         this.deliveryService = deliveryService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -122,6 +124,9 @@ public class OrderService {
             if (firstOrderIdStr.isEmpty()) {
                 firstOrderIdStr = "ord_" + order.getId();
             }
+            
+            // Trigger notifications asynchronously
+            notificationService.sendOrderConfirmation(order, user);
         }
 
         Map<String, Object> response = new HashMap<>();

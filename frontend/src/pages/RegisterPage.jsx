@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Briefcase, Award, ArrowRight, ArrowLeft } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import Card from '../components/ui/Card';
@@ -12,20 +13,20 @@ import AnimatedAvatar from '../components/ui/AnimatedAvatar';
 const RegisterPage = () => {
   const navigate = useNavigate();
   const register = useAuthStore((state) => state.register);
+  const verifyRegistration = useAuthStore((state) => state.verifyRegistration);
+  const googleLogin = useAuthStore((state) => state.googleLogin);
   const isLoading = useAuthStore((state) => state.isLoading);
   const addToast = useUiStore((state) => state.addToast);
 
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    company: '',
-    role: 'Executive Concierge',
-    budgetCapacity: '5000',
     avatarUrl: ''
   });
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(1);
+  const [otp, setOtp] = useState('');
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -49,7 +50,7 @@ const RegisterPage = () => {
   const validateStep1 = () => {
     const newErrors = {};
     if (!formData.name) newErrors.name = 'Full name is required';
-    if (!formData.email) newErrors.email = 'Corporate email is required';
+    if (!formData.email) newErrors.email = 'Email or phone number is required';
     if (!formData.password) newErrors.password = 'Secure password is required';
     else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
     
@@ -57,31 +58,38 @@ const RegisterPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep1()) {
-      setStep(2);
-    }
-  };
-
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (step === 1) {
-      handleNext();
-      return;
-    }
+    if (!validateStep1()) return;
 
     try {
-      await register({
+      const response = await register({
         email: formData.email,
         password: formData.password,
         fullName: formData.name,
         phone: '',
         avatarUrl: formData.avatarUrl || null
       });
-      addToast('Membership approved. Welcome to your private conciergery.', 'success');
-      navigate('/');
+      addToast(response.message || 'Registration successful. Check console for OTP.', 'success');
+      setStep(2);
     } catch (err) {
       addToast(err.message || 'Registration request failed.', 'error');
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      addToast('Please enter a valid 6-digit OTP', 'error');
+      return;
+    }
+    
+    try {
+      await verifyRegistration(formData.email, otp);
+      addToast('Email verified. Welcome to your private conciergery.', 'success');
+      navigate('/');
+    } catch (err) {
+      addToast(err.message || 'OTP Verification failed.', 'error');
     }
   };
 
@@ -89,15 +97,38 @@ const RegisterPage = () => {
     <Card hoverable={false} className="glow-pink-pulse">
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', marginBottom: '8px' }}>
-          {step === 1 ? 'Request Membership' : 'Company Calibration'}
+          Request Membership
         </h3>
         <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          {step === 1 ? 'Step 1 of 2: Create your private credentials.' : 'Step 2 of 2: Setup your business capacity.'}
+          Create your private credentials.
         </p>
       </div>
 
-      <form onSubmit={handleRegister}>
-        {step === 1 ? (
+      {step === 1 ? (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                try {
+                  await googleLogin(credentialResponse.credential);
+                  addToast('Membership approved via Google.', 'success');
+                  navigate('/');
+                } catch (err) {
+                  addToast(err.message || 'Google Login failed.', 'error');
+                }
+              }}
+              onError={() => {
+                addToast('Google Login Failed', 'error');
+              }}
+            />
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative' }}>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '0' }} />
+            <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'var(--card-bg)', padding: '0 10px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>or</span>
+          </div>
+
+        <form onSubmit={handleRegister}>
           <>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px', gap: '10px' }}>
               <AnimatedAvatar src={formData.avatarUrl} name={formData.name || 'GUEST'} size="lg" />
@@ -129,7 +160,7 @@ const RegisterPage = () => {
             </div>
 
             <Input
-              label="Legal Full Name"
+              label="Name"
               type="text"
               icon={User}
               placeholder="Alexander Sterling"
@@ -139,10 +170,10 @@ const RegisterPage = () => {
             />
 
             <Input
-              label="Corporate Email Address"
-              type="email"
+              label="Email or Phone Number"
+              type="text"
               icon={Mail}
-              placeholder="alex@sterlingholdings.com"
+              placeholder="alex@sterlingholdings.com or +1234567890"
               value={formData.email}
               onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrors({ ...errors, email: '' }); }}
               error={errors.email}
@@ -159,72 +190,50 @@ const RegisterPage = () => {
             />
 
             <Button
-              onClick={handleNext}
+              type="submit"
+              loading={isLoading}
               variant="primary"
-              icon={ArrowRight}
+              icon={Award}
               style={{ width: '100%', marginTop: '8px' }}
             >
-              Continue Configuration
+              Submit Request
             </Button>
           </>
-        ) : (
-          <>
-            <Input
-              label="Company / Enterprise Name"
-              type="text"
-              icon={Briefcase}
-              placeholder="Sterling Holdings Ltd"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-
-            <Select
-              label="Your Professional Role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              options={[
-                { value: 'Executive Concierge', label: 'Executive Concierge' },
-                { value: 'Department Head', label: 'Department Head / Director' },
-                { value: 'People Ops Manager', label: 'People Ops / HR Director' },
-                { value: 'CEO / Founder', label: 'CEO / Board Founder' }
-              ]}
-            />
-
-            <Select
-              label="Annual Departmental Budget Capacity"
-              value={formData.budgetCapacity}
-              onChange={(e) => setFormData({ ...formData, budgetCapacity: e.target.value })}
-              options={[
-                { value: '2500', label: '$2,500 - $5,000 / year' },
-                { value: '5000', label: '$5,000 - $10,000 / year' },
-                { value: '15000', label: '$10,000 - $25,000 / year' },
-                { value: '50000', label: '$25,000+ / year' }
-              ]}
-            />
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <Button
-                onClick={() => setStep(1)}
-                variant="glass"
-                icon={ArrowLeft}
-                style={{ flex: 1 }}
-              >
-                Back
-              </Button>
-              
-              <Button
-                type="submit"
-                loading={isLoading}
-                variant="secondary"
-                icon={Award}
-                style={{ flex: 1 }}
-              >
-                Submit Request
-              </Button>
-            </div>
-          </>
-        )}
-      </form>
+        </form>
+        </>
+      ) : (
+        <form onSubmit={handleVerifyOtp}>
+          <div style={{ textAlign: 'center', marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Enter the 6-digit code sent to <strong>{formData.email}</strong>
+          </div>
+          <Input
+            label="Verification Code (OTP)"
+            type="text"
+            icon={Lock}
+            placeholder="123456"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            maxLength={6}
+          />
+          <Button
+            type="submit"
+            loading={isLoading}
+            variant="primary"
+            style={{ width: '100%', marginTop: '16px' }}
+          >
+            Verify & Continue
+          </Button>
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <button 
+              type="button" 
+              onClick={() => setStep(1)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Back to Registration
+            </button>
+          </div>
+        </form>
+      )}
 
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <p style={{ fontSize: '0.85rem' }}>

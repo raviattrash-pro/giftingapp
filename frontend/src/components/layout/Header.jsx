@@ -69,7 +69,7 @@ const Header = () => {
   const isEnabled = (flagKey) => {
     if (!user) return false;
     const flags = user.featureFlags || user.toggles || {};
-    return flags[flagKey] !== false;
+    return flags[flagKey] === true;
   };
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -156,27 +156,6 @@ const Header = () => {
         color: 'var(--text-primary)'
       }}
     >
-      {/* 1. Green Promo Ribbon Banner (Free Delivery) */}
-      <div
-        className="lh-promo-ribbon"
-        style={{
-          background: '#648a3c', // FNP Green
-          color: '#ffffff',
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          textAlign: 'center',
-          padding: '8px 16px',
-          letterSpacing: '0.5px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px'
-        }}
-      >
-        <Truck size={14} />
-        <span>FREE DELIVERY!!! Enjoy ₹0 shipping with our free delivery time slots</span>
-      </div>
-
       {/* 2. Main Header Row */}
       <div
         className="lh-header-main"
@@ -282,6 +261,7 @@ const Header = () => {
           {/* Download App (PWA) Button */}
           <button
             type="button"
+            className="hide-on-mobile"
             onClick={handlePwaInstall}
             style={{
               display: 'flex',
@@ -319,6 +299,7 @@ const Header = () => {
 
           {/* My Reminders */}
           <div 
+            className="hide-on-mobile"
             onClick={() => navigate('/calendar')}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'color 0.2s' }}
             onMouseEnter={(e) => e.currentTarget.style.color = 'var(--brand-rose-gold)'}
@@ -330,6 +311,7 @@ const Header = () => {
 
           {/* Currency (INR) */}
           <div 
+            className="hide-on-mobile"
             onClick={() => addToast('Currently only INR (₹) is supported for corporate gifting.', 'info')}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}
             onMouseEnter={(e) => e.currentTarget.style.color = 'var(--brand-rose-gold)'}
@@ -343,6 +325,7 @@ const Header = () => {
           {/* Corporate Dashboard */}
           {isAuthenticated && (
             <div 
+              className="hide-on-mobile"
               onClick={() => navigate('/dashboard')}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'color 0.2s' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--brand-rose-gold)'}
@@ -390,8 +373,9 @@ const Header = () => {
             </div>
 
             {showUserMenu && (
-              <div style={{
-                position: 'absolute', top: '120%', right: 0,
+              <div 
+                className="lh-dropdown-menu"
+                style={{
                 background: 'var(--bg-secondary)', borderRadius: '12px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                 border: '1px solid var(--glass-border)',
@@ -411,6 +395,9 @@ const Header = () => {
                         <div style={{ height: '1px', background: 'var(--glass-border)', margin: '4px 0' }} />
                         <button onClick={() => { navigate('/admin/catalog'); setShowUserMenu(false); }} style={{ ...dropdownItemStyle, color: 'var(--text-primary)' }}>
                           Catalog Mgmt
+                        </button>
+                        <button onClick={() => { navigate('/admin/hero-carousel'); setShowUserMenu(false); }} style={{ ...dropdownItemStyle, color: 'var(--text-primary)' }}>
+                          Hero Carousel
                         </button>
                         <button onClick={() => { navigate('/admin/users'); setShowUserMenu(false); }} style={{ ...dropdownItemStyle, color: 'var(--text-primary)' }}>
                           User Mgmt
@@ -459,8 +446,9 @@ const Header = () => {
             </div>
 
             {showMoreMenu && (
-              <div style={{
-                position: 'absolute', top: '120%', right: 0,
+              <div 
+                className="lh-dropdown-menu"
+                style={{
                 background: 'var(--bg-secondary)', borderRadius: '12px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                 border: '1px solid var(--glass-border)',
@@ -484,7 +472,7 @@ const Header = () => {
                   ))
                 ) : (
                   <div style={{ padding: '8px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                    Login to access premium gifting features
+                    {isAuthenticated ? 'No premium features enabled for your account' : 'Login to access premium gifting features'}
                   </div>
                 )}
               </div>

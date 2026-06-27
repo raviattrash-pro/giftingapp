@@ -76,11 +76,15 @@ const GiftStoriesPage = () => {
             
             {/* Story Image */}
             <div style={{ width: '100%', height: '400px', overflow: 'hidden', position: 'relative' }}>
-              <img 
-                src={story.image} 
-                alt={story.giftName} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              {(story.image?.includes('video/') || story.image?.match(/\.(mp4|webm)$/i)) ? (
+                <video src={story.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted autoPlay loop playsInline />
+              ) : (
+                <img 
+                  src={story.image} 
+                  alt={story.giftName} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
             </div>
 
             {/* Story Details */}

@@ -2,10 +2,14 @@ package com.giftconcierge.controller;
 
 import com.giftconcierge.dto.CheckoutRequest;
 import com.giftconcierge.dto.OrderResponse;
+import com.giftconcierge.dto.RazorpayOrderRequest;
+import com.giftconcierge.dto.RazorpayOrderResponse;
+import com.giftconcierge.dto.RazorpayVerifyRequest;
 import com.giftconcierge.model.GiftOrder;
 import com.giftconcierge.security.UserPrincipal;
 import com.giftconcierge.service.OrderService;
 import com.giftconcierge.service.DeliveryService;
+import com.giftconcierge.service.RazorpayService;
 import com.giftconcierge.model.PaymentSettings;
 import com.giftconcierge.repository.PaymentSettingsRepository;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +27,13 @@ public class OrderController {
     private final OrderService orderService;
     private final PaymentSettingsRepository paymentSettingsRepository;
     private final DeliveryService deliveryService;
+    private final RazorpayService razorpayService;
 
-    public OrderController(OrderService orderService, PaymentSettingsRepository paymentSettingsRepository, DeliveryService deliveryService) {
+    public OrderController(OrderService orderService, PaymentSettingsRepository paymentSettingsRepository, DeliveryService deliveryService, RazorpayService razorpayService) {
         this.orderService = orderService;
         this.paymentSettingsRepository = paymentSettingsRepository;
         this.deliveryService = deliveryService;
+        this.razorpayService = razorpayService;
     }
 
     @PostMapping
@@ -40,6 +46,21 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getMyOrders(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(orderService.getOrderResponses(principal.getId()));
+    }
+
+    @PostMapping("/razorpay/create-order")
+    public ResponseEntity<RazorpayOrderResponse> createRazorpayOrder(@RequestBody RazorpayOrderRequest request) {
+        return ResponseEntity.ok(razorpayService.createOrder(request));
+    }
+
+    @PostMapping("/razorpay/verify")
+    public ResponseEntity<Map<String, Object>> verifyRazorpayPayment(@RequestBody RazorpayVerifyRequest request) {
+        boolean isValid = razorpayService.verifySignature(request);
+        if (isValid) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "Payment verified successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Invalid signature"));
+        }
     }
 
     @GetMapping("/delivery-quote")

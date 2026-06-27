@@ -37,9 +37,8 @@ const Sidebar = () => {
   };
 
   const isEnabled = (flagKey) => {
-    if (!user) return false;
-    const flags = user.featureFlags || user.toggles || {};
-    return flags[flagKey] !== false;
+    const flags = user?.featureFlags || user?.toggles || {};
+    return flags[flagKey] === true;
   };
 
   const navGroups = [];
@@ -119,6 +118,7 @@ const Sidebar = () => {
       items: [
         { id: 'admin-catalog', label: 'Manage Catalog', icon: ClipboardList, path: '/admin/catalog' },
         { id: 'admin-users', label: 'Manage Users', icon: Users, path: '/admin/users' },
+        { id: 'admin-cms', label: 'Content Management', icon: ClipboardList, path: '/admin/cms' },
         { id: 'admin-orders', label: 'Verify Payments', icon: CreditCard, path: '/admin/orders' },
         { id: 'admin-analytics', label: 'Sales Analytics', icon: BarChart3, path: '/admin/analytics' }
       ]

@@ -308,6 +308,14 @@ a:hover {
    Mobile Responsiveness & Media Queries
    ========================================== */
 
+.lh-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  z-index: 1000;
+}
+
 /* Universal Responsive Table Wrapper */
 .table-responsive,
 card[style*="overflowX: auto"],
@@ -372,6 +380,12 @@ div[style*="overflowX: auto"] {
     width: 100%;
   }
 
+  .lh-dropdown-menu {
+    position: absolute;
+    top: 120%;
+    right: 0;
+  }
+
   /* Force grid layouts to single-column list */
   div[style*="gridTemplateColumns"],
   div[style*="grid-template-columns"] {
@@ -391,17 +405,29 @@ div[style*="overflowX: auto"] {
     margin-top: 10px;
   }
   .lh-actions {
-    overflow-x: auto;
-    padding-bottom: 4px;
-    width: 100%;
-    justify-content: flex-start !important;
-    order: 4;
-    margin-top: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    z-index: 1000;
+    padding: 10px 16px;
+    margin: 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    justify-content: space-around !important;
     border-top: 1px solid var(--glass-border);
-    padding-top: 10px;
+    flex-wrap: nowrap;
   }
-  .lh-actions::-webkit-scrollbar {
-    height: 0px; /* Hide scrollbar for clean look */
+  .lh-dropdown-menu {
+    top: auto !important;
+    bottom: 120% !important;
+    right: 16px !important;
+  }
+  .hide-on-mobile {
+    display: none !important;
+  }
+  body {
+    padding-bottom: 60px; /* Space for the bottom navbar */
   }
 }
 
@@ -428,6 +454,57 @@ div[style*="overflowX: auto"] {
   
   td, th {
     padding: 10px 8px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Ultra small devices */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.2rem !important; }
+  
+  .glass-card {
+    padding: 12px !important;
+  }
+}
+
+/* ==========================================
+   Mobile Responsive Utilities
+   ========================================== */
+
+.mobile-stack {
+  display: flex;
+  flex-direction: row;
+  gap: inherit;
+}
+
+.mobile-full-width {
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .mobile-scroll-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+  .mobile-scroll-row::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  /* Touch friendly spacing */
+  button, .btn-premium, a, select, input {
+    min-height: 44px;
   }
 }
 

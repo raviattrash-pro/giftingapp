@@ -37,8 +37,14 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import AdminFlowersPage from './pages/admin/AdminFlowersPage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
+import AdminHeroCarouselPage from './pages/admin/AdminHeroCarouselPage';
+import AdminCMSPage from './pages/admin/AdminCMSPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
 import CustomerServicePage from './pages/CustomerServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsConditionsPage from './pages/TermsConditionsPage';
+import CookieBanner from './components/ui/CookieBanner';
+import AnalyticsTracker from './components/utils/AnalyticsTracker';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -58,7 +64,7 @@ const ProtectedRoute = ({ children }) => {
 const FeatureRoute = ({ flagKey, children }) => {
   const { user } = useAuthStore();
   const flags = user?.featureFlags || {};
-  const isEnabled = flags[flagKey] !== false;
+  const isEnabled = flags[flagKey] === true;
 
   return isEnabled ? children : <Navigate to="/settings" replace />;
 };
@@ -86,7 +92,6 @@ const App = () => {
       document.body.style.backgroundColor = '#fcf6f0';
       document.body.style.color = '#2d3748';
     }
-    console.log('[ThemeManager] Applied data-theme =', theme);
   }, [theme]);
 
   // 2. PWA event registration effect
@@ -123,9 +128,11 @@ const App = () => {
   }, [addToast, setDeferredPrompt, setIsInstallable]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {/* Global notifications layer */}
       <ToastContainer />
+      <CookieBanner />
+      <AnalyticsTracker />
 
       <Routes>
         {/* Auth Group */}
@@ -141,6 +148,8 @@ const App = () => {
           <Route path="/gifts" element={<GiftBrowsePage />} />
           <Route path="/gifts/:id" element={<GiftDetailPage />} />
           <Route path="/support" element={<CustomerServicePage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-conditions" element={<TermsConditionsPage />} />
         </Route>
 
         {/* Core Authenticated Group */}
@@ -189,6 +198,8 @@ const App = () => {
           <Route path="/admin/analytics" element={<AdminRoute><AdminAnalyticsPage /></AdminRoute>} />
           <Route path="/admin/flowers" element={<AdminRoute><AdminFlowersPage /></AdminRoute>} />
           <Route path="/admin/coupons" element={<AdminRoute><AdminCouponsPage /></AdminRoute>} />
+          <Route path="/admin/hero-carousel" element={<AdminRoute><AdminHeroCarouselPage /></AdminRoute>} />
+          <Route path="/admin/cms" element={<AdminRoute><AdminCMSPage /></AdminRoute>} />
         </Route>
 
         {/* Catch-all fallback */}

@@ -14,6 +14,8 @@ import com.giftconcierge.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +37,7 @@ public class RecipientService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "recipients", key = "#userId")
     public List<RecipientResponse> getAllByUser(Long userId) {
         return recipientRepository.findByUserId(userId).stream()
                 .map(r -> mapToResponse(r, userId))
@@ -49,6 +52,7 @@ public class RecipientService {
     }
 
     @Transactional
+    @CacheEvict(value = "recipients", key = "#userId")
     public RecipientResponse create(Long userId, RecipientRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -89,6 +93,7 @@ public class RecipientService {
     }
 
     @Transactional
+    @CacheEvict(value = "recipients", key = "#userId")
     public RecipientResponse update(Long id, Long userId, RecipientRequest request) {
         Recipient recipient = recipientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipient", "id", id));
@@ -113,6 +118,7 @@ public class RecipientService {
     }
 
     @Transactional
+    @CacheEvict(value = "recipients", allEntries = true)
     public void delete(Long id) {
         if (!recipientRepository.existsById(id)) {
             throw new ResourceNotFoundException("Recipient", "id", id);

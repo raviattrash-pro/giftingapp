@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import Card from '../components/ui/Card';
@@ -10,6 +11,7 @@ import Button from '../components/ui/Button';
 const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const googleLogin = useAuthStore((state) => state.googleLogin);
   const isLoading = useAuthStore((state) => state.isLoading);
   const addToast = useUiStore((state) => state.addToast);
 
@@ -20,7 +22,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    if (!email) newErrors.email = 'Email is required';
+    if (!email) newErrors.email = 'Email or phone number is required';
     if (!password) newErrors.password = 'Password is required';
 
     if (Object.keys(newErrors).length > 0) {
@@ -46,12 +48,34 @@ const LoginPage = () => {
         </p>
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              await googleLogin(credentialResponse.credential);
+              addToast('Welcome back to Louvion Hampers via Google.', 'success');
+              navigate('/');
+            } catch (err) {
+              addToast(err.message || 'Google Login failed.', 'error');
+            }
+          }}
+          onError={() => {
+            addToast('Google Login Failed', 'error');
+          }}
+        />
+      </div>
+
+      <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative' }}>
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '0' }} />
+        <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'var(--card-bg)', padding: '0 10px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>or</span>
+      </div>
+
       <form onSubmit={handleLogin}>
         <Input
-          label="Corporate Email Address"
-          type="email"
+          label="Email or Phone Number"
+          type="text"
           icon={Mail}
-          placeholder="you@company.com"
+          placeholder="you@company.com or +1234567890"
           value={email}
           onChange={(e) => { setEmail(e.target.value); setErrors({ ...errors, email: '' }); }}
           error={errors.email}

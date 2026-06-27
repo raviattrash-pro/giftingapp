@@ -144,7 +144,7 @@ const AdminUsersPage = () => {
       <Card hoverable={false} style={{ padding: '16px' }}>
         <Input
           icon={Search}
-          placeholder="Search user by name or corporate email address..."
+          placeholder="Search user by name or email address..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ marginBottom: 0 }}
@@ -296,7 +296,7 @@ const AdminUsersPage = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
             {featureFlagOptions.map((flag) => {
-              const active = featureFlags[flag.key] !== false;
+              const active = featureFlags[flag.key] === true;
               return (
                 <button
                   key={flag.key}

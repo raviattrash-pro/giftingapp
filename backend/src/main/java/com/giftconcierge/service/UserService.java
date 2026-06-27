@@ -6,6 +6,8 @@ import com.giftconcierge.model.User;
 import com.giftconcierge.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CachePut;
 
 @Service
 public class UserService {
@@ -17,6 +19,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "users", key = "#userId")
     public UserResponse getCurrentUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -24,6 +27,7 @@ public class UserService {
     }
 
     @Transactional
+    @CachePut(value = "users", key = "#userId")
     public UserResponse updateUser(Long userId, UserResponse request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -39,6 +43,7 @@ public class UserService {
     }
 
     @Transactional
+    @CachePut(value = "users", key = "#userId")
     public UserResponse updateAvatar(Long userId, String avatarUrl) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));

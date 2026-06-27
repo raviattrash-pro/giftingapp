@@ -20,6 +20,13 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
+  cache:
+    type: simple
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -29,6 +36,18 @@ spring:
     serialization:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
+
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:placeholder@gmail.com}
+    password: ${SMTP_PASSWORD:placeholder_password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 app:
   jwt:
@@ -46,3 +65,17 @@ logging:
   level:
     com.giftconcierge: DEBUG
     org.springframework.security: INFO
+
+google:
+  client:
+    id: "939865483008-1i309tcldvfikuv4ieolvip9ipatebjj.apps.googleusercontent.com"
+
+razorpay:
+  key:
+    id: "rzp_test_T2ZcJJxequLGlG"
+    secret: "LGgxk6y6DDvdP52EokrpzPkK"
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:placeholder_sid}
+  auth-token: ${TWILIO_AUTH_TOKEN:placeholder_token}
+  phone-number: ${TWILIO_PHONE_NUMBER:+1234567890}

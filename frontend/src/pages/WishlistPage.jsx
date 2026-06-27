@@ -142,11 +142,13 @@ const WishlistPage = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
-                      />
+                      <div style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
+                        {(item.image?.includes('video/') || item.image?.match(/\.(mp4|webm)$/i)) ? (
+                          <video src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                        ) : (
+                          <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        )}
+                      </div>
                       <div style={{ minWidth: 0 }}>
                         <h4 style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.name}

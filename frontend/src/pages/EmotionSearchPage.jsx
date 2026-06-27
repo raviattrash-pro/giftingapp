@@ -111,11 +111,17 @@ const EmotionSearchPage = () => {
               onClick={() => navigate(`/gifts/${gift.id}`)}
               style={{ display: 'flex', gap: '16px', padding: '16px', alignItems: 'center' }}
             >
-              <img
-                src={gift.image}
-                alt={gift.name}
-                style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }}
-              />
+              <div style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                {(gift.image?.includes('video/') || gift.image?.match(/\.(mp4|webm)$/i)) ? (
+                  <video src={gift.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted playsInline />
+                ) : (
+                  <img
+                    src={gift.image}
+                    alt={gift.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h4 style={{ fontSize: '0.88rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {gift.name}

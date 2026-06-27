@@ -27,6 +27,9 @@ export const useAuthStore = create((set, get) => ({
     try {
       const data = await authService.login(email, password);
       localStorage.setItem('gift_token', data.token);
+      if (data.refreshToken) {
+        localStorage.setItem('gift_refresh_token', data.refreshToken);
+      }
       localStorage.setItem('gift_user', JSON.stringify(data.user));
       set({
         token: data.token,
@@ -44,11 +47,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  register: async (userData) => {
+  googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await authService.register(userData);
+      const data = await authService.googleLogin(credential);
       localStorage.setItem('gift_token', data.token);
+      if (data.refreshToken) {
+        localStorage.setItem('gift_refresh_token', data.refreshToken);
+      }
       localStorage.setItem('gift_user', JSON.stringify(data.user));
       set({
         token: data.token,
@@ -59,7 +65,47 @@ export const useAuthStore = create((set, get) => ({
       return data;
     } catch (err) {
       set({
+        error: err.response?.data?.message || 'Google Login failed',
+        isLoading: false,
+      });
+      throw err;
+    }
+  },
+
+  register: async (userData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await authService.register(userData);
+      set({ isLoading: false });
+      return data; // Returns MessageResponse
+    } catch (err) {
+      set({
         error: err.response?.data?.message || 'Registration failed',
+        isLoading: false,
+      });
+      throw err;
+    }
+  },
+
+  verifyRegistration: async (email, otp) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await authService.verifyRegistration(email, otp);
+      localStorage.setItem('gift_token', data.token);
+      if (data.refreshToken) {
+        localStorage.setItem('gift_refresh_token', data.refreshToken);
+      }
+      localStorage.setItem('gift_user', JSON.stringify(data.user));
+      set({
+        token: data.token,
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      return data;
+    } catch (err) {
+      set({
+        error: err.response?.data?.message || 'OTP verification failed',
         isLoading: false,
       });
       throw err;
@@ -68,6 +114,7 @@ export const useAuthStore = create((set, get) => ({
 
   logout: () => {
     localStorage.removeItem('gift_token');
+    localStorage.removeItem('gift_refresh_token');
     localStorage.removeItem('gift_user');
     set({
       token: null,

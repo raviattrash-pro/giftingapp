@@ -19,6 +19,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.Optional;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class AuthService {
@@ -30,36 +38,79 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final PasswordResetRepository passwordResetRepository;
+    private final TwilioService twilioService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, PasswordResetRepository passwordResetRepository) {
+    @Value("${google.client.id:placeholder}")
+    private String googleClientId;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, PasswordResetRepository passwordResetRepository, TwilioService twilioService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.authenticationManager = authenticationManager;
         this.passwordResetRepository = passwordResetRepository;
+        this.twilioService = twilioService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("User", "email", request.getEmail());
+    public MessageResponse register(RegisterRequest request) {
+        String identifier = request.getEmail(); // Could be email or phone
+        
+        if (userRepository.existsByEmailOrPhone(identifier, identifier)) {
+            throw new DuplicateResourceException("User", "email/phone", identifier);
         }
 
+        String otp = String.format("%06d", new SecureRandom().nextInt(999999));
+        boolean isPhone = !identifier.contains("@");
+        
         User user = User.builder()
-                .email(request.getEmail())
+                .email(identifier) // Store in email column regardless
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .phone(request.getPhone())
+                .phone(isPhone ? identifier : request.getPhone())
                 .avatarUrl(request.getAvatarUrl())
                 .premium(false)
+                .isVerified(false)
+                .otpCode(otp)
+                .otpExpiryTime(LocalDateTime.now().plusMinutes(10))
                 .build();
 
         user = userRepository.save(user);
-        log.info("User registered successfully: {}", user.getEmail());
+        
+        if (isPhone) {
+            twilioService.sendOtp(identifier, otp);
+            log.info("Sent Twilio SMS OTP to {}", identifier);
+        } else {
+            // MOCK: Print OTP to console instead of sending email
+            log.info("MOCK - Registration Email OTP for {} is: {}", identifier, otp);
+            System.out.println("MOCK - Registration Email OTP for " + identifier + " is: " + otp);
+        }
+
+        return new MessageResponse("Registration successful. Please verify your account with the OTP sent.");
+    }
+
+    @Transactional
+    public AuthResponse verifyRegistration(String emailOrPhone, String otp) {
+        User user = userRepository.findByEmailOrPhone(emailOrPhone, emailOrPhone)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email/phone", emailOrPhone));
+
+        if (user.getIsVerified()) {
+            throw new BadRequestException("User is already verified.");
+        }
+
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(otp) || user.getOtpExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Invalid or expired OTP.");
+        }
+
+        user.setIsVerified(true);
+        user.setOtpCode(null);
+        user.setOtpExpiryTime(null);
+        userRepository.save(user);
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
+        log.info("User verified and logged in: {}", user.getEmail());
         return new AuthResponse(accessToken, refreshToken, mapToUserResponse(user));
     }
 
@@ -68,14 +119,63 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
+        User user = userRepository.findByEmailOrPhone(request.getEmail(), request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email/phone", request.getEmail()));
+
+        if (user.getIsVerified() != null && !user.getIsVerified()) {
+            throw new UnauthorizedException("Please verify your account before logging in.");
+        }
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         log.info("User logged in: {}", user.getEmail());
         return new AuthResponse(accessToken, refreshToken, mapToUserResponse(user));
+    }
+
+    @Transactional
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(request.getCredential());
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
+                String pictureUrl = (String) payload.get("picture");
+
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                User user;
+                if (userOpt.isPresent()) {
+                    user = userOpt.get();
+                } else {
+                    user = User.builder()
+                            .email(email)
+                            .passwordHash("OAUTH")
+                            .fullName(name != null ? name : "Google User")
+                            .avatarUrl(pictureUrl)
+                            .authProvider("GOOGLE")
+                            .premium(false)
+                            .isVerified(true)
+                            .build();
+                    user = userRepository.save(user);
+                    log.info("Google User registered successfully: {}", email);
+                }
+
+                String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
+                String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+                return new AuthResponse(accessToken, refreshToken, mapToUserResponse(user));
+            } else {
+                throw new UnauthorizedException("Invalid ID token.");
+            }
+        } catch (Exception e) {
+            log.error("Google authentication failed", e);
+            throw new UnauthorizedException("Google authentication failed");
+        }
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest request) {

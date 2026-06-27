@@ -6,7 +6,7 @@ export const useAiStore = create((set, get) => ({
     {
       id: 'msg_welcome',
       role: 'assistant',
-      content: 'Welcome to your premium GiftConcierge. I am GiftGPT, your private AI advisor. Tell me about your recipient, their preferences, or the occasion, and I will curate the perfect luxury gift.'
+      content: 'Welcome to your premium Louvion Hampers concierge. I am GiftGPT, your private AI advisor. Tell me about your recipient, their preferences, or the occasion, and I will curate the perfect luxury gift.'
     }
   ],
   isLoading: false,
@@ -79,7 +79,7 @@ Would you like me to add one of these to your shopping cart or customize the wra
       {
         id: 'msg_welcome',
         role: 'assistant',
-        content: 'Welcome to your premium GiftConcierge. I am GiftGPT, your private AI advisor. Tell me about your recipient, their preferences, or the occasion, and I will curate the perfect luxury gift.'
+        content: 'Welcome to your premium Louvion Hampers concierge. I am GiftGPT, your private AI advisor. Tell me about your recipient, their preferences, or the occasion, and I will curate the perfect luxury gift.'
       }
     ]
   }),

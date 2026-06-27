@@ -1,12 +1,12 @@
 import api from './api';
 
 export const DEFAULT_FEATURE_FLAGS = {
-  aiAssistant: true,
-  budgetPlanner: true,
-  groupGifting: true,
-  secretSanta: true,
-  giftStories: true,
-  futureLocker: true
+  aiAssistant: false,
+  budgetPlanner: false,
+  groupGifting: false,
+  secretSanta: false,
+  giftStories: false,
+  futureLocker: false
 };
 
 export const normalizeUser = (user) => {
@@ -62,22 +62,33 @@ export const authService = {
     }
   },
 
+  googleLogin: async (credential) => {
+    try {
+      const response = await api.post('/auth/oauth/google', { credential });
+      return normalizeAuthResponse(response.data);
+    } catch (error) {
+      console.warn('AuthService.googleLogin API call failed.', error);
+      throw error;
+    }
+  },
+
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
+      return response.data; // Now returns MessageResponse
+    } catch (error) {
+      console.warn('AuthService.register API call failed.', error);
+      throw error;
+    }
+  },
+
+  verifyRegistration: async (email, otp) => {
+    try {
+      const response = await api.post('/auth/verify-registration', { email, otp });
       return normalizeAuthResponse(response.data);
     } catch (error) {
-      console.warn('AuthService.register API call failed, using fallback mock authentication.', error);
-      return normalizeAuthResponse({
-        token: 'mock-jwt-token-xyz123',
-        user: {
-          id: 'usr_mock1',
-          email: userData.email,
-          name: userData.fullName || userData.name || userData.email.split('@')[0].toUpperCase(),
-          role: 'USER',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
-        }
-      });
+      console.warn('AuthService.verifyRegistration API call failed.', error);
+      throw error;
     }
   },
 

@@ -5,7 +5,7 @@ export const registerServiceWorker = () => {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.warn('GiftConcierge service worker registration failed:', error);
+      console.warn('Louvion Hampers service worker registration failed:', error);
     });
   });
 };

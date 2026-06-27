@@ -1,8 +1,22 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Truck, HelpCircle, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Phone, Truck, HelpCircle, ShieldCheck } from 'lucide-react';
 import Card from '../components/ui/Card';
+import api from '../services/api';
 
 const CustomerServicePage = () => {
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await api.get('/content');
+        setContent(res.data);
+      } catch (err) {
+        console.error("Failed to fetch customer service content", err);
+      }
+    };
+    fetchContent();
+  }, []);
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -18,11 +32,21 @@ const CustomerServicePage = () => {
             </div>
             <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Contact Us</h3>
           </div>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            <strong>Phone:</strong> +91 98765 43210<br />
-            <strong>Email:</strong> support@louvionhampers.com<br />
-            <strong>Hours:</strong> Mon-Sun, 9:00 AM - 9:00 PM
-          </p>
+          <div style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+            {content?.contact_us ? content.contact_us : (
+              <>
+                <strong>Phone:</strong> +91 98765 43210<br />
+                <strong>Email:</strong> support@louvionhampers.com<br />
+                <strong>Hours:</strong> Mon-Sun, 9:00 AM - 9:00 PM
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+                  <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Found a bug?</h4>
+                  <a href="mailto:bugs@louvionhampers.com?subject=Bug Report" style={{ color: 'var(--color-primary)', textDecoration: 'underline' }}>
+                    Report an issue
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
         </Card>
 
         <Card>
@@ -32,12 +56,16 @@ const CustomerServicePage = () => {
             </div>
             <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Delivery Terms</h3>
           </div>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            We partner with <strong>Porter</strong> and <strong>Rapido</strong> for seamless delivery.<br />
-            - Standard Delivery: 2-3 Hours<br />
-            - Free Delivery: Before 8 AM & After 7 PM IST<br />
-            - Peak Surcharge: ₹75 applies during day hours.
-          </p>
+          <div style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+            {content?.delivery_terms ? content.delivery_terms : (
+              <>
+                We partner with <strong>Porter</strong> and <strong>Rapido</strong> for seamless delivery.<br />
+                - Standard Delivery: 2-3 Hours<br />
+                - Free Delivery: Before 8 AM & After 7 PM IST<br />
+                - Peak Surcharge: ₹75 applies during day hours.
+              </>
+            )}
+          </div>
         </Card>
 
         <Card>
@@ -47,15 +75,19 @@ const CustomerServicePage = () => {
             </div>
             <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>FAQs</h3>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-            <div>
-              <strong>Q: How do I track my order?</strong>
-              <div>A: Visit the "Order History" page and find real-time status updates via Porter/Rapido tracking IDs.</div>
-            </div>
-            <div>
-              <strong>Q: Can I change the delivery address?</strong>
-              <div>A: Address can only be modified before the "PAID" status. Please contact support immediately.</div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: 'var(--text-secondary)', fontSize: '0.95rem', whiteSpace: 'pre-line' }}>
+            {content?.faqs ? content.faqs : (
+              <>
+                <div>
+                  <strong>Q: How do I track my order?</strong>
+                  <div>A: Visit the "Order History" page and find real-time status updates via Porter/Rapido tracking IDs.</div>
+                </div>
+                <div>
+                  <strong>Q: Can I change the delivery address?</strong>
+                  <div>A: Address can only be modified before the "PAID" status. Please contact support immediately.</div>
+                </div>
+              </>
+            )}
           </div>
         </Card>
 
@@ -66,9 +98,9 @@ const CustomerServicePage = () => {
             </div>
             <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Refund Policy</h3>
           </div>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            Perishable items (flowers, cakes) cannot be refunded once dispatched. For non-perishable hampers, we offer a 24-hour return window if items are damaged during transit.
-          </p>
+          <div style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+            {content?.refund_policy ? content.refund_policy : 'Perishable items (flowers, cakes) cannot be refunded once dispatched. For non-perishable hampers, we offer a 24-hour return window if items are damaged during transit.'}
+          </div>
         </Card>
       </div>
     </div>

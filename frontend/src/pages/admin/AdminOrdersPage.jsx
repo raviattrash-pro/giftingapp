@@ -480,14 +480,28 @@ const AdminOrdersPage = () => {
               border: '1px solid var(--glass-border)',
               background: '#0d1117',
               display: 'flex',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              alignItems: 'center',
+              minHeight: '200px'
             }}
           >
-            <img 
-              src={currentScreenshot} 
-              alt="Full payment receipt screenshot" 
-              style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
-            />
+            {currentScreenshot && currentScreenshot.includes('razorpay_verified_payment') ? (
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <CheckCircle2 size={48} color="var(--success-color)" style={{ marginBottom: '16px' }} />
+                <h3 style={{ color: 'var(--success-color)', margin: '0 0 8px 0' }}>Payment Automatically Verified</h3>
+                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>This order was securely paid via Razorpay.</p>
+              </div>
+            ) : (
+              <img 
+                src={currentScreenshot} 
+                alt="Full payment receipt screenshot" 
+                style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<div style="padding: 32px; color: var(--text-secondary); text-align: center;">Receipt image not found or broken.</div>';
+                }}
+              />
+            )}
           </div>
           <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
             <Button onClick={() => setIsScreenshotOpen(false)} variant="glass">

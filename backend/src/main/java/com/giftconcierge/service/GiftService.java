@@ -4,6 +4,7 @@ import com.giftconcierge.model.Gift;
 import com.giftconcierge.repository.GiftRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,17 +20,20 @@ public class GiftService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "gifts", key = "'all'")
     public List<Gift> getAllGifts() {
         return giftRepository.findAll();
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "gifts", key = "#id")
     public Gift getById(Long id) {
         return giftRepository.findById(id)
                 .orElseThrow(() -> new com.giftconcierge.exception.ResourceNotFoundException("Gift", "id", id));
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "gifts", key = "'category:' + #category")
     public List<Gift> getByCategory(String category) {
         return giftRepository.findByCategory(category);
     }

@@ -37,6 +37,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         admin.setPasswordHash(passwordEncoder.encode("password123"));
         admin.setRole("ADMIN");
         admin.setPremium(true);
+        admin.setIsVerified(true);
         admin.setMonthlyBudget(new BigDecimal("25000"));
         admin.setFeatureFlags(adminFeatureFlags());
         userRepository.save(admin);
@@ -51,6 +52,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         demoUser.setPasswordHash(passwordEncoder.encode("password123"));
         demoUser.setRole("USER");
         demoUser.setPremium(true);
+        demoUser.setIsVerified(true);
         demoUser.setMonthlyBudget(new BigDecimal("10000"));
         demoUser.setFeatureFlags(defaultFeatureFlags());
         userRepository.save(demoUser);

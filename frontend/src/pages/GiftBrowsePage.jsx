@@ -4,8 +4,9 @@ import {
   Search, Heart, Info, Filter, ShoppingBag, ArrowRight, Truck, Sparkles, 
   ChevronLeft, ChevronRight, LayoutDashboard, MessageSquareText, Calendar, 
   BarChart3, HeartHandshake, UsersRound, Gamepad2, PlaySquare, SearchCode,
-  ClipboardList, User, CreditCard, Gift, Package, Star, ChevronDown, ChevronUp, CheckCircle
+  ClipboardList, User, CreditCard, Gift, Package, Star, ChevronDown, ChevronUp, CheckCircle, Image
 } from 'lucide-react';
+import { trackEvent } from '../components/utils/AnalyticsTracker';
 import { useGiftStore } from '../store/giftStore';
 import { useUiStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
@@ -13,6 +14,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
+import MediaCarousel from '../components/ui/MediaCarousel';
 import api from '../services/api';
 
 const GiftBrowsePage = () => {
@@ -23,7 +25,7 @@ const GiftBrowsePage = () => {
 
   // Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
-  const carouselSlides = [
+  const [carouselSlides, setCarouselSlides] = useState([
     {
       title: 'Birthday Joy, Gift-Wrapped',
       subtitle: 'Curated bloom, gourmet cakes & handcrafted keepsakes for thoughtful celebrations.',
@@ -42,7 +44,21 @@ const GiftBrowsePage = () => {
       image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=1200',
       tag: 'EXQUISITE BLOOMS'
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchHeroCarousel = async () => {
+      try {
+        const { data } = await api.get('/config/HERO_CAROUSEL');
+        if (data && data.value) {
+          setCarouselSlides(JSON.parse(data.value));
+        }
+      } catch (err) {
+        // silently fallback to default
+      }
+    };
+    fetchHeroCarousel();
+  }, []);
 
   // Occasions tab filtering
   const occasionTabs = navCategories && navCategories.length > 0 
@@ -182,29 +198,29 @@ const GiftBrowsePage = () => {
   };
 
   const isEnabled = (flagKey) => {
-    if (!user) return false;
-    const flags = user.featureFlags || user.toggles || {};
-    return flags[flagKey] !== false;
+    const flags = user?.featureFlags || user?.toggles || {};
+    return flags[flagKey] === true;
   };
 
   // Feature cards data
   const featureCards = [
-    { title: 'AI Gift Advisor', desc: 'Get personalized gift suggestions powered by AI', icon: MessageSquareText, path: '/giftgpt', color: '#8b5cf6', show: isAuthenticated && isEnabled('aiAssistant') },
-    { title: 'Gift Finder Quiz', desc: 'Answer questions to find the perfect gift', icon: Sparkles, path: '/quiz', color: '#f59e0b', show: isAuthenticated && isEnabled('aiAssistant') },
-    { title: 'AI Gift Detective', desc: 'Analyze social profiles for gift insights', icon: SearchCode, path: '/detective', color: '#06b6d4', show: isAuthenticated && isEnabled('aiAssistant') },
-    { title: 'Emotion Search', desc: 'Find gifts by the emotions they evoke', icon: HeartHandshake, path: '/emotions', color: '#ec4899', show: isAuthenticated && isEnabled('aiAssistant') },
-    { title: 'Metrics Dashboard', desc: 'Track your gifting stats and performance', icon: LayoutDashboard, path: '/dashboard', color: '#3b82f6', show: isAuthenticated && isEnabled('dashboard') },
-    { title: 'Occasion Calendar', desc: 'Never miss a birthday or anniversary', icon: Calendar, path: '/calendar', color: '#10b981', show: isAuthenticated && isEnabled('occasionCalendar') },
-    { title: 'Budget Planner', desc: 'Plan and optimize your gifting budget', icon: BarChart3, path: '/budget', color: '#f97316', show: isAuthenticated && isEnabled('budgetPlanner') },
-    { title: 'Relationship Vault', desc: 'Store gift preferences for every person', icon: User, path: '/recipients', color: '#6366f1', show: isAuthenticated && isEnabled('recipientVault') },
-    { title: 'Wishlists', desc: 'Create & share collaborative wishlists', icon: Heart, path: '/wishlists', color: '#ef4444', show: isAuthenticated && isEnabled('groupGifting') },
-    { title: 'Group Gifting', desc: 'Pool money together for bigger gifts', icon: UsersRound, path: '/groupgifting', color: '#14b8a6', show: isAuthenticated && isEnabled('groupGifting') },
-    { title: 'Secret Santa', desc: 'Organize Secret Santa events easily', icon: Gamepad2, path: '/secretsanta', color: '#e11d48', show: isAuthenticated && isEnabled('secretSanta') },
-    { title: 'Gift Stories', desc: 'Share and discover gifting stories', icon: PlaySquare, path: '/stories', color: '#a855f7', show: isAuthenticated && isEnabled('giftStories') },
+    { title: 'AI Gift Advisor', desc: 'Get personalized gift suggestions powered by AI', icon: MessageSquareText, path: '/giftgpt', color: '#8b5cf6', show: !user || isEnabled('aiAssistant') },
+    { title: 'Gift Finder Quiz', desc: 'Answer questions to find the perfect gift', icon: Sparkles, path: '/quiz', color: '#f59e0b', show: !user || isEnabled('aiAssistant') },
+    { title: 'AI Gift Detective', desc: 'Analyze social profiles for gift insights', icon: SearchCode, path: '/detective', color: '#06b6d4', show: !user || isEnabled('aiAssistant') },
+    { title: 'Emotion Search', desc: 'Find gifts by the emotions they evoke', icon: HeartHandshake, path: '/emotions', color: '#ec4899', show: !user || isEnabled('aiAssistant') },
+    { title: 'Metrics Dashboard', desc: 'Track your gifting stats and performance', icon: LayoutDashboard, path: '/dashboard', color: '#3b82f6', show: !user || isEnabled('dashboard') },
+    { title: 'Occasion Calendar', desc: 'Never miss a birthday or anniversary', icon: Calendar, path: '/calendar', color: '#10b981', show: !user || isEnabled('occasionCalendar') },
+    { title: 'Budget Planner', desc: 'Plan and optimize your gifting budget', icon: BarChart3, path: '/budget', color: '#f97316', show: !user || isEnabled('budgetPlanner') },
+    { title: 'Relationship Vault', desc: 'Store gift preferences for every person', icon: User, path: '/recipients', color: '#6366f1', show: !user || isEnabled('recipientVault') },
+    { title: 'Wishlists', desc: 'Create & share collaborative wishlists', icon: Heart, path: '/wishlists', color: '#ef4444', show: !user || isEnabled('groupGifting') },
+    { title: 'Group Gifting', desc: 'Pool money together for bigger gifts', icon: UsersRound, path: '/groupgifting', color: '#14b8a6', show: !user || isEnabled('groupGifting') },
+    { title: 'Secret Santa', desc: 'Organize Secret Santa events easily', icon: Gamepad2, path: '/secretsanta', color: '#e11d48', show: !user || isEnabled('secretSanta') },
+    { title: 'Gift Stories', desc: 'Share and discover gifting stories', icon: PlaySquare, path: '/stories', color: '#a855f7', show: !user || isEnabled('giftStories') },
     { title: 'Future Locker', desc: 'Schedule gifts for future occasions', icon: ClipboardList, path: '/futurelocker', color: '#0ea5e9', show: true },
   ].filter(f => f.show);
 
   const adminCards = [
+    { title: 'Hero Carousel', desc: 'Manage home page banners', icon: Image, path: '/admin/hero-carousel', color: '#f43f5e' },
     { title: 'Manage Catalog', desc: 'Add, edit and manage gift products', icon: ClipboardList, path: '/admin/catalog', color: '#7c3aed' },
     { title: 'Manage Users', desc: 'View and manage user accounts', icon: User, path: '/admin/users', color: '#2563eb' },
     { title: 'Manage Orders', desc: 'Process and track customer orders', icon: Package, path: '/admin/orders', color: '#db2777' },
@@ -353,7 +369,7 @@ const GiftBrowsePage = () => {
               </h2>
               <span style={{ fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>Fast Dispatch</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '20px', justifyContent: 'space-between' }}>
+            <div className="mobile-scroll-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '20px', justifyContent: 'space-between' }}>
               {[
                 { name: 'Explore All', textInside: 'All', category: 'All' },
                 { name: "Father's Day", image: '/fathers_day_gift.png', category: "Father's Day" },
@@ -367,10 +383,11 @@ const GiftBrowsePage = () => {
                 <div
                   key={idx}
                   onClick={() => {
+                    trackEvent('CATEGORY_CLICK', '/browse', item.category, { type: 'occasion' });
                     setActiveOccasionTab(item.category);
                     document.getElementById('tailored-section')?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'center' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
                 >
                   <div 
                     style={{ 
@@ -488,8 +505,13 @@ const GiftBrowsePage = () => {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  onClick={() => selectQuickFilter(item.cat)}
+                  onClick={() => {
+                    trackEvent('CATEGORY_CLICK', '/browse', item.name, { type: 'quick_filter' });
+                    selectQuickFilter(item.cat);
+                  }}
                   style={{
+                    flexShrink: 0,
+                    minWidth: '110px',
                     borderRadius: '12px',
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -553,7 +575,7 @@ const GiftBrowsePage = () => {
                   style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0px', borderRadius: '16px', overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)' }}
                 >
                   <div style={{ height: '220px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-                    <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <MediaCarousel mediaUrls={[item.image, ...(item.additionalImages || [])].filter(Boolean)} altText={item.name} />
                     <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
                       <Badge variant={item.availability === 'Out of Stock' ? 'danger' : 'success'}>{item.availability}</Badge>
                     </div>
@@ -594,7 +616,13 @@ const GiftBrowsePage = () => {
                   return (
                     <div
                       key={card.path}
-                      onClick={() => navigate(card.path)}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login');
+                        } else {
+                          navigate(card.path);
+                        }
+                      }}
                       style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', borderRadius: '14px', border: '1px solid var(--glass-border)', background: 'var(--bg-secondary)', cursor: 'pointer' }}
                     >
                       <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: card.color + '12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -972,13 +1000,7 @@ const GiftBrowsePage = () => {
                     >
                       {/* Product image */}
                       <div style={{ height: '200px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        />
+                        <MediaCarousel mediaUrls={[item.image, ...(item.additionalImages || [])].filter(Boolean)} altText={item.name} />
                         <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
                           <Badge variant={item.availability === 'Out of Stock' ? 'danger' : item.availability === 'Low Stock' ? 'warning' : 'success'}>
                             {item.availability}

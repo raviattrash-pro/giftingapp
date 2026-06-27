@@ -92,7 +92,7 @@ const AuthLayout = () => {
               WebkitTextFillColor: 'transparent'
             }}
           >
-            GiftConcierge
+            Louvion Hampers
           </span>
         </div>
 
