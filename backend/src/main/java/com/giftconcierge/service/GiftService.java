@@ -20,7 +20,6 @@ public class GiftService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "gifts", key = "'all'")
     public List<Gift> getAllGifts() {
         return giftRepository.findAll();
     }
