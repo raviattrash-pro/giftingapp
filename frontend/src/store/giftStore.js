@@ -67,6 +67,13 @@ const toGiftPayload = (product) => {
   };
 };
 
+const FALLBACK_CATALOG = [
+  { id: 9901, name: "Luxury Wellness Spa Hamper", category: "Self Care", price: 1599, rating: 4.8, image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=600", description: "A deeply relaxing collection of premium bath and body essentials.", stock: 50 },
+  { id: 9902, name: "Artisan Chocolate Truffles Box", category: "Traditional Gifts", price: 899, rating: 4.9, image: "https://images.unsplash.com/photo-1548883354-94bcfe321cbb?auto=format&fit=crop&q=80&w=600", description: "Hand-crafted decadent chocolates for special celebrations.", stock: 50 },
+  { id: 9903, name: "Elegant Jade Plant Decor", category: "Home & Living", price: 1299, rating: 4.7, image: "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=600", description: "A beautiful succulent known to bring good fortune and positive energy.", stock: 50 },
+  { id: 9904, name: "Executive Coffee Collection", category: "Corporate", price: 1499, rating: 4.8, image: "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=600", description: "Curated selection of single-origin coffee beans for the modern professional.", stock: 50 }
+];
+
 export const useGiftStore = create((set, get) => ({
   catalog: [],
   currentGift: null,
@@ -130,7 +137,8 @@ export const useGiftStore = create((set, get) => ({
         set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
       } catch (e) {}
     } else {
-      set({ isLoading: true, error: null });
+      // Instant Fallback to ensure 0 seconds of waiting time even on first load!
+      set({ catalog: FALLBACK_CATALOG.map(normalizeGift), isLoading: true, error: null });
     }
 
     try {
