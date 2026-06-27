@@ -34,13 +34,20 @@ const AdminOrdersPage = () => {
   };
 
   const fetchOrders = async () => {
-    setIsLoading(true);
+    const cached = localStorage.getItem('admin_orders_cache');
+    if (cached) {
+      try { setOrders(JSON.parse(cached)); } catch(e) {}
+    } else {
+      setIsLoading(true);
+    }
+
     try {
       const response = await api.get('/admin/orders');
       setOrders(response.data || []);
+      localStorage.setItem('admin_orders_cache', JSON.stringify(response.data || []));
     } catch (err) {
       console.error(err);
-      addToast('Failed to fetch orders list.', 'error');
+      if (!cached) addToast('Failed to fetch orders list.', 'error');
     } finally {
       setIsLoading(false);
     }

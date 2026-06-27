@@ -151,14 +151,37 @@ export const useGiftStore = create((set, get) => ({
   },
 
   fetchGiftById: async (id) => {
-    set({ isLoading: true, error: null });
+    const cachedCatalog = localStorage.getItem('catalog_cache');
+    let fallbackGift = null;
+    if (cachedCatalog) {
+      try {
+        const catalog = JSON.parse(cachedCatalog);
+        fallbackGift = catalog.find(g => g.id === parseInt(id) || g.id === id);
+      } catch (e) {}
+    }
+    if (!fallbackGift) {
+      const individualCache = localStorage.getItem(`gift_cache_${id}`);
+      if (individualCache) {
+        try { fallbackGift = JSON.parse(individualCache); } catch (e) {}
+      }
+    }
+
+    if (fallbackGift) {
+      set({ currentGift: normalizeGift(fallbackGift), isLoading: false, error: null });
+    } else {
+      set({ isLoading: true, error: null });
+    }
+
     try {
       const response = await api.get(`/gifts/${id}`);
-      set({ currentGift: normalizeGift(response.data), isLoading: false });
+      const freshGift = normalizeGift(response.data);
+      set({ currentGift: freshGift, isLoading: false, error: null });
+      try { localStorage.setItem(`gift_cache_${id}`, JSON.stringify(freshGift)); } catch(e){}
     } catch (err) {
       console.error(`API call failed for gift ${id}:`, err);
-      set({ currentGift: null, isLoading: false, error: 'Gift not found.' });
-      throw err;
+      if (!fallbackGift) {
+        set({ currentGift: null, isLoading: false, error: 'Gift not found.' });
+      }
     }
   },
 
@@ -362,17 +385,62 @@ export const useGiftStore = create((set, get) => ({
     }
   },
 
+  syncPendingOrders: async () => {
+    const pendingStr = localStorage.getItem('pending_sync_orders');
+    if (!pendingStr) return;
+    
+    let pendingOrders = [];
+    try {
+      pendingOrders = JSON.parse(pendingStr);
+    } catch (e) { return; }
+
+    if (pendingOrders.length === 0) return;
+
+    const remainingOrders = [];
+    for (const pendingOrder of pendingOrders) {
+      try {
+        await api.post('/orders', pendingOrder.payload);
+      } catch (err) {
+        if (err.response && err.response.status >= 400 && err.response.status < 500) {
+           console.error('Pending order rejected by server, discarding:', err);
+        } else {
+           remainingOrders.push(pendingOrder);
+        }
+      }
+    }
+    
+    localStorage.setItem('pending_sync_orders', JSON.stringify(remainingOrders));
+  },
+
   checkout: async (checkoutDetails) => {
     set({ isLoading: true });
+    const payload = {
+      items: get().cart,
+      ...checkoutDetails
+    };
+
     try {
-      const response = await api.post('/orders', {
-        items: get().cart,
-        ...checkoutDetails
-      });
+      const response = await api.post('/orders', payload);
       set({ cart: [], isLoading: false });
       return response.data;
     } catch (err) {
-      console.error('API checkout failed:', err);
+      console.warn('API checkout failed, attempting offline save...', err);
+      if (!err.response || err.response.status >= 500) {
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const pendingOrder = { tempId, payload, createdAt: new Date().toISOString() };
+        
+        const existingStr = localStorage.getItem('pending_sync_orders');
+        let existing = [];
+        if (existingStr) {
+          try { existing = JSON.parse(existingStr); } catch (e) {}
+        }
+        existing.push(pendingOrder);
+        localStorage.setItem('pending_sync_orders', JSON.stringify(existing));
+        
+        set({ cart: [], isLoading: false });
+        return { orderId: tempId, offline: true };
+      }
+      
       set({ isLoading: false });
       throw err;
     }

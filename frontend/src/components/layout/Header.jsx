@@ -261,7 +261,6 @@ const Header = () => {
           {/* Download App (PWA) Button */}
           <button
             type="button"
-            className="hide-on-mobile"
             onClick={handlePwaInstall}
             style={{
               display: 'flex',

@@ -131,6 +131,12 @@ export const useAuthStore = create((set, get) => ({
       set({ isAuthenticated: false, user: null, token: null });
       return;
     }
+
+    const cachedUser = localStorage.getItem('gift_user');
+    if (cachedUser) {
+      try { set({ user: JSON.parse(cachedUser), isAuthenticated: true }); } catch (e) {}
+    }
+
     try {
       const user = await authService.getCurrentUser();
       if (user) {
@@ -139,8 +145,12 @@ export const useAuthStore = create((set, get) => ({
       } else {
         set({ isAuthenticated: false, user: null, token: null });
       }
-    } catch {
-      set({ isAuthenticated: false, user: null, token: null });
+    } catch (err) {
+      if ((!err.response || err.response.status >= 500) && cachedUser) {
+        // Backend sleeping or network error: preserve cached auth state
+      } else {
+        set({ isAuthenticated: false, user: null, token: null });
+      }
     }
   },
 

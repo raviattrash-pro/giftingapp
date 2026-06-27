@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useUiStore } from './store/uiStore';
+import { useGiftStore } from './store/giftStore';
 import { ToastContainer } from './components/ui/Toast';
 
 // Layouts
@@ -76,10 +77,18 @@ const AdminRoute = ({ children }) => {
 
 const App = () => {
   const { theme, setDeferredPrompt, setIsInstallable, addToast, fetchNavCategories } = useUiStore();
+  const { syncPendingOrders } = useGiftStore();
 
   useEffect(() => {
     fetchNavCategories();
   }, [fetchNavCategories]);
+
+  // Background offline sync
+  useEffect(() => {
+    syncPendingOrders();
+    const interval = setInterval(syncPendingOrders, 30000); // retry every 30s
+    return () => clearInterval(interval);
+  }, [syncPendingOrders]);
 
   // 1. Theme application effect
   useEffect(() => {

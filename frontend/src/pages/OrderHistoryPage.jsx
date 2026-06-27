@@ -101,56 +101,63 @@ const OrderHistoryPage = () => {
   /* ---- Fetch orders ---- */
   const fetchOrders = useCallback(async (isPolling = false) => {
     try {
-      if (!isPolling) setLoading(true);
+      if (!isPolling) {
+        const cached = localStorage.getItem('user_orders_cache');
+        if (cached) {
+          try { setOrders(JSON.parse(cached)); } catch(e) {}
+        } else {
+          setLoading(true);
+        }
+      }
+
+      const mergePendingOrders = (apiOrders) => {
+        const pendingStr = localStorage.getItem('pending_sync_orders');
+        if (!pendingStr) return apiOrders;
+        try {
+          const pending = JSON.parse(pendingStr);
+          const offlineMocks = pending.map(p => ({
+            id: p.tempId,
+            status: 'PENDING_VERIFICATION',
+            createdAt: p.createdAt,
+            amount: p.payload.grandTotal,
+            giftName: p.payload.items?.[0]?.gift?.name || 'Items',
+            imageUrl: p.payload.items?.[0]?.gift?.imageUrl,
+            deliveryAddress: p.payload.address,
+            isOffline: true
+          }));
+          return [...offlineMocks, ...apiOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        } catch(e) {
+          return apiOrders;
+        }
+      };
+
       const res = await api.get('/orders');
-      const newOrders = res.data || [];
+      const newOrders = mergePendingOrders(res.data || []);
+      localStorage.setItem('user_orders_cache', JSON.stringify(newOrders));
 
       // Detect status changes — fire notification for newly confirmed/rejected orders
       const prev = previousStatusesRef.current;
       newOrders.forEach((order) => {
+        if (order.isOffline) return;
         const oldStatus = prev[order.id];
         if (oldStatus && oldStatus !== order.status) {
           if (order.status === 'CONFIRMED') {
-            addNotification(
-              'order_confirmed',
-              'Order Confirmed! 🎉',
-              `Your order "${order.giftName}" (ord_${order.id}) has been verified and confirmed!`
-            );
+            addNotification('order_confirmed', 'Order Confirmed! 🎉', `Your order "${order.giftName}" (ord_${order.id}) has been verified and confirmed!`);
             addToast(`Order "${order.giftName}" has been confirmed!`, 'success', 6000);
           } else if (order.status === 'SHIPPED') {
-            addNotification(
-              'order_confirmed',
-              'Order Shipped! 📦',
-              `Your order "${order.giftName}" (ord_${order.id}) has been shipped!`
-            );
+            addNotification('order_confirmed', 'Order Shipped! 📦', `Your order "${order.giftName}" (ord_${order.id}) has been shipped!`);
             addToast(`Order "${order.giftName}" has been shipped!`, 'success', 6000);
           } else if (order.status === 'IN_TRANSIT') {
-            addNotification(
-              'order_confirmed',
-              'Order In Transit 🚚',
-              `Your order "${order.giftName}" (ord_${order.id}) is in transit and on its way!`
-            );
+            addNotification('order_confirmed', 'Order In Transit 🚚', `Your order "${order.giftName}" (ord_${order.id}) is in transit!`);
             addToast(`Order "${order.giftName}" is in transit!`, 'info', 6000);
           } else if (order.status === 'OUT_FOR_DELIVERY') {
-            addNotification(
-              'order_confirmed',
-              'Out for Delivery! 📍',
-              `Your order "${order.giftName}" (ord_${order.id}) is out for delivery. Get ready!`
-            );
+            addNotification('order_confirmed', 'Out for Delivery! 📍', `Your order "${order.giftName}" (ord_${order.id}) is out for delivery!`);
             addToast(`Order "${order.giftName}" is out for delivery!`, 'info', 6000);
           } else if (order.status === 'DELIVERED') {
-            addNotification(
-              'order_confirmed',
-              'Order Delivered! ✅',
-              `Your order "${order.giftName}" (ord_${order.id}) has been delivered successfully!`
-            );
+            addNotification('order_confirmed', 'Order Delivered! ✅', `Your order "${order.giftName}" (ord_${order.id}) has been delivered successfully!`);
             addToast(`Order "${order.giftName}" has been delivered!`, 'success', 6000);
           } else if (order.status === 'REJECTED') {
-            addNotification(
-              'order_rejected',
-              'Order Rejected',
-              `Your order "${order.giftName}" (ord_${order.id}) payment was not verified. Please contact support.`
-            );
+            addNotification('order_rejected', 'Order Rejected', `Your order "${order.giftName}" (ord_${order.id}) payment was not verified.`);
             addToast(`Order "${order.giftName}" was rejected.`, 'error', 6000);
           }
         }
@@ -163,7 +170,7 @@ const OrderHistoryPage = () => {
 
       setOrders(newOrders);
     } catch {
-      if (!isPolling) addToast('Failed to load order history', 'error');
+      if (!isPolling && !localStorage.getItem('user_orders_cache')) addToast('Failed to load order history', 'error');
     } finally {
       if (!isPolling) setLoading(false);
     }
