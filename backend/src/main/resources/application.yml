@@ -21,11 +21,10 @@ spring:
         format_sql: true
 
   cache:
-    type: simple
+    type: redis
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      url: ${REDIS_URL:redis://localhost:6379}
 
   servlet:
     multipart:
@@ -68,12 +67,12 @@ logging:
 
 google:
   client:
-    id: "939865483008-1i309tcldvfikuv4ieolvip9ipatebjj.apps.googleusercontent.com"
+    id: ${GOOGLE_CLIENT_ID:"939865483008-1i309tcldvfikuv4ieolvip9ipatebjj.apps.googleusercontent.com"}
 
 razorpay:
   key:
-    id: "rzp_test_T2ZcJJxequLGlG"
-    secret: "LGgxk6y6DDvdP52EokrpzPkK"
+    id: ${RAZORPAY_KEY_ID:"rzp_test_T2ZcJJxequLGlG"}
+    secret: ${RAZORPAY_KEY_SECRET:"LGgxk6y6DDvdP52EokrpzPkK"}
 
 twilio:
   account-sid: ${TWILIO_ACCOUNT_SID:placeholder_sid}
