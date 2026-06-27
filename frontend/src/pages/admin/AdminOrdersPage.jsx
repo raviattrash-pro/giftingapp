@@ -372,7 +372,16 @@ const AdminOrdersPage = () => {
                 {/* Screenshot Thumb */}
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Receipt</span>
-                  {order.paymentScreenshot ? (
+                  {order.paymentScreenshot === 'razorpay_verified_payment' ? (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      background: 'rgba(0, 245, 212, 0.1)', border: '1px solid var(--color-success)',
+                      color: 'var(--color-success)', padding: '4px 8px', borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.7rem', fontWeight: 600, width: 'fit-content'
+                    }}>
+                      ✅ Razorpay Verified
+                    </div>
+                  ) : order.paymentScreenshot ? (
                     <div 
                       onClick={() => openScreenshotModal(order.paymentScreenshot, order.id)}
                       style={{
@@ -398,18 +407,17 @@ const AdminOrdersPage = () => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0,0,0,0.4)',
+                        background: 'rgba(0,0,0,0.3)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#fff',
                         opacity: 0,
-                        transition: 'opacity 0.2s'
+                        transition: 'opacity 0.2s ease'
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
                       onMouseLeave={(e) => e.currentTarget.style.opacity = 0}
                       >
-                        <Eye size={12} />
+                        <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 600 }}>View</span>
                       </div>
                     </div>
                   ) : (

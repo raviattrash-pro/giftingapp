@@ -123,13 +123,30 @@ export const useGiftStore = create((set, get) => ({
   },
 
   fetchCatalog: async () => {
-    set({ isLoading: true, error: null });
+    const cachedData = localStorage.getItem('catalog_cache');
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
+      } catch (e) {}
+    } else {
+      set({ isLoading: true, error: null });
+    }
+
     try {
       const response = await api.get('/gifts');
-      set({ catalog: (response.data || []).map(normalizeGift), isLoading: false });
+      const freshData = response.data || [];
+      set({ catalog: freshData.map(normalizeGift), isLoading: false, error: null });
+      try {
+        localStorage.setItem('catalog_cache', JSON.stringify(freshData));
+      } catch (e) {
+        // Ignore QuotaExceededError if images are too large for localStorage (5MB limit)
+      }
     } catch (err) {
       console.error('API call failed fetching catalog:', err);
-      set({ catalog: [], isLoading: false, error: 'Failed to retrieve catalog.' });
+      if (!cachedData) {
+        set({ catalog: [], isLoading: false, error: 'Failed to retrieve catalog.' });
+      }
     }
   },
 
