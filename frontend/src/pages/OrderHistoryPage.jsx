@@ -123,6 +123,8 @@ const OrderHistoryPage = () => {
             giftName: p.payload.items?.[0]?.gift?.name || 'Items',
             imageUrl: p.payload.items?.[0]?.gift?.imageUrl,
             deliveryAddress: p.payload.address,
+            deliveryCharge: p.payload.deliveryCharge || 0,
+            wrappingCharge: p.payload.wrappingCharge || 0,
             isOffline: true
           }));
           return [...offlineMocks, ...apiOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -132,7 +134,19 @@ const OrderHistoryPage = () => {
       };
 
       const res = await api.get('/orders');
-      const newOrders = mergePendingOrders(res.data || []);
+      let newOrders = mergePendingOrders(res.data || []);
+      
+      try {
+        const wrapsStr = localStorage.getItem('order_wraps_cache');
+        if (wrapsStr) {
+          const wraps = JSON.parse(wrapsStr);
+          newOrders = newOrders.map(o => ({
+            ...o,
+            wrappingCharge: o.wrappingCharge || wraps[o.id] || 0
+          }));
+        }
+      } catch (e) {}
+
       localStorage.setItem('user_orders_cache', JSON.stringify(newOrders));
 
       // Detect status changes — fire notification for newly confirmed/rejected orders
@@ -938,9 +952,15 @@ const OrderHistoryPage = () => {
                       <span style={{ color: '#666' }}>Delivery Charge:</span>
                       <span style={{ color: '#333' }}>₹{billOrder.deliveryCharge || 0}</span>
                    </div>
+                   {billOrder.wrappingCharge > 0 && (
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#666' }}>Gift Wrapping:</span>
+                        <span style={{ color: '#333' }}>₹{billOrder.wrappingCharge}</span>
+                     </div>
+                   )}
                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #eaeaea', color: '#000' }}>
                       <span>Grand Total:</span>
-                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0)}</span>
+                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0)}</span>
                    </div>
                 </div>
              </div>

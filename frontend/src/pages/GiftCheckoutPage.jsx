@@ -314,7 +314,8 @@ const GiftCheckoutPage = () => {
                 personalMessage, scheduledDate, scheduledTime,
                 deliveryService: courierType === 'Instant' ? deliveryService : null,
                 deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
-                adminDeliveryCharge: courierType === 'Instant' ? adminDeliveryCharge : 0
+                adminDeliveryCharge: courierType === 'Instant' ? adminDeliveryCharge : 0,
+                wrappingCharge: wrappingCost
               });
 
               cart.forEach(item => {
@@ -330,6 +331,36 @@ const GiftCheckoutPage = () => {
 
               setOrderId(result.orderId || response.razorpay_order_id);
               setCheckoutComplete(true);
+
+              // --- Optimistic UI Update for My Orders ---
+              try {
+                const cachedStr = localStorage.getItem('user_orders_cache');
+                const cachedOrders = cachedStr ? JSON.parse(cachedStr) : [];
+                const optimisticOrder = {
+                  id: result.orderId || response.razorpay_order_id,
+                  status: 'PENDING_VERIFICATION',
+                  createdAt: new Date().toISOString(),
+                  amount: grandTotal,
+                  giftName: cart[0]?.gift?.name || 'Items',
+                  imageUrl: cart[0]?.gift?.imageUrl,
+                  deliveryAddress: `${address}, ${city}, ${pincode}`,
+                  deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
+                  wrappingCharge: wrappingCost,
+                  isOffline: false
+                };
+                localStorage.setItem('user_orders_cache', JSON.stringify([optimisticOrder, ...cachedOrders]));
+
+                if (wrappingCost > 0) {
+                  const wrapsStr = localStorage.getItem('order_wraps_cache');
+                  const wraps = wrapsStr ? JSON.parse(wrapsStr) : {};
+                  wraps[optimisticOrder.id] = wrappingCost;
+                  localStorage.setItem('order_wraps_cache', JSON.stringify(wraps));
+                }
+              } catch (e) {
+                console.error('Failed to update orders cache optimistically', e);
+              }
+              // ------------------------------------------
+
               addToast('Payment successful! Your order has been placed.', 'success');
               addNotification(
                 'order_placed',
