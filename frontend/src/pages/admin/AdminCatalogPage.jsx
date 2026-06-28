@@ -12,10 +12,19 @@ import Badge from '../../components/ui/Badge';
 
 const AdminCatalogPage = () => {
   const { catalog, fetchCatalog, addProduct, updateProduct, deleteProduct } = useGiftStore();
-  const { addToast, navCategories, updateNavCategories } = useUiStore();
+  const { addToast, navCategories, updateNavCategories, checkoutConfig, fetchCheckoutConfig, updateCheckoutConfig } = useUiStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const [localCheckoutConfig, setLocalCheckoutConfig] = useState(checkoutConfig);
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  useEffect(() => {
+    if (checkoutConfig) {
+      setLocalCheckoutConfig(checkoutConfig);
+    }
+  }, [checkoutConfig]);
 
   // --- Delivery Settings State ---
   const [deliverySettings, setDeliverySettings] = useState({
@@ -144,6 +153,19 @@ const AdminCatalogPage = () => {
     await updateNavCategories(localNavCategories);
   };
   // ----------------------------------------
+  
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    await updateCheckoutConfig(localCheckoutConfig);
+    setSavingConfig(false);
+  };
+
+  const handleTierChange = (index, field, value) => {
+    const newTiers = [...localCheckoutConfig.deliveryTiers];
+    newTiers[index][field] = Number(value);
+    setLocalCheckoutConfig({ ...localCheckoutConfig, deliveryTiers: newTiers });
+  };
 
   // Modal control
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -432,6 +454,44 @@ const AdminCatalogPage = () => {
             </label>
           </div>
         </div>
+      </Card>
+
+      <Card hoverable={false} style={{ padding: '16px' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Checkout Pricing Config</h3>
+        {localCheckoutConfig && (
+          <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Premium Gift Wrapping Charge (₹)</h4>
+              <Input 
+                type="number" 
+                value={localCheckoutConfig.wrappingCharge}
+                onChange={(e) => setLocalCheckoutConfig({...localCheckoutConfig, wrappingCharge: Number(e.target.value)})}
+              />
+            </div>
+            
+            <div>
+              <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Distance-Based Delivery Tiers (₹)</h4>
+              {localCheckoutConfig.deliveryTiers.map((tier, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.85rem' }}>Min Km:</span>
+                  <Input type="number" value={tier.min} onChange={(e) => handleTierChange(idx, 'min', e.target.value)} style={{ width: '80px' }} />
+                  <span style={{ fontSize: '0.85rem' }}>Max Km:</span>
+                  <Input type="number" value={tier.max} onChange={(e) => handleTierChange(idx, 'max', e.target.value)} style={{ width: '80px' }} />
+                  <span style={{ fontSize: '0.85rem' }}>Price:</span>
+                  <Input type="number" value={tier.price} onChange={(e) => handleTierChange(idx, 'price', e.target.value)} style={{ width: '100px' }} />
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '12px' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Overage Price (&gt; 15km):</span>
+                <Input type="number" value={localCheckoutConfig.overagePrice} onChange={(e) => setLocalCheckoutConfig({...localCheckoutConfig, overagePrice: Number(e.target.value)})} style={{ width: '100px' }} />
+              </div>
+            </div>
+
+            <Button type="submit" variant="primary" loading={savingConfig}>
+              Save Checkout Config
+            </Button>
+          </form>
+        )}
       </Card>
 
       {/* Navigation Events Management */}
