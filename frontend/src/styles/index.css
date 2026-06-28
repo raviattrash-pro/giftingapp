@@ -10,7 +10,7 @@
 
 body {
   font-family: var(--font-body);
-  background-color: var(--bg-primary);
+  background: var(--bg-primary) !important;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
@@ -348,6 +348,13 @@ div[style*="overflowX: auto"] {
   .glass-header {
     padding: 0 12px !important;
   }
+  
+  /* Mobile Typography Scaling */
+  h1 { font-size: 1.8rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.2rem !important; }
+  h4 { font-size: 1.1rem !important; }
+
   .header-title {
     font-size: 1.05rem !important;
   }
@@ -502,9 +509,67 @@ div[style*="overflowX: auto"] {
     width: 100% !important;
   }
   
-  /* Touch friendly spacing */
-  button, .btn-premium, a, select, input {
+  /* Touch friendly spacing for form elements */
+  .btn-premium, select, input {
     min-height: 44px;
+  }
+}
+
+/* ==========================================
+   Header Mobile Layout Fixes
+   ========================================== */
+@media (max-width: 768px) {
+  /* Force the header to allow wrapping */
+  .lh-header-main {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    padding: 12px 16px !important;
+    gap: 12px !important;
+  }
+  
+  /* Make logo and actions share the top row */
+  .lh-header-left {
+    flex: 1 !important;
+    gap: 12px !important;
+  }
+  .lh-brand-logo {
+    height: 42px !important;
+  }
+  
+  /* Hide the location selector on mobile to save space */
+  .lh-delivery-selector {
+    display: none !important;
+  }
+
+  /* Actions Container */
+  .lh-actions {
+    gap: 10px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Hide the text labels under action icons to save horizontal space (keep cart badge) */
+  .lh-actions > div > span:not([style*="absolute"]):not([style*="display: flex"]),
+  .lh-actions > button > span {
+    display: none !important; 
+  }
+  
+  /* Specifically target "Hi User" and "More" which have flex spans */
+  .lh-actions > div > span[style*="display: flex"] {
+    display: none !important;
+  }
+  
+  /* Force search bar to a new full-width row at the bottom of the header */
+  .lh-search {
+    order: 3 !important;
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    margin-top: 4px !important;
+  }
+  
+  /* Adjust subheader scrolling row padding */
+  .lh-site-header .custom-scrollbar {
+    padding: 0 16px !important;
+    height: auto !important;
   }
 }
 

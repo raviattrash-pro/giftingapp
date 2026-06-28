@@ -245,7 +245,7 @@ const GiftBrowsePage = () => {
   const tailoredProducts = catalog.filter(item => item.category === activeOccasionTab || activeOccasionTab === 'All');
 
   return (
-    <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0px' }}>
+    <div style={{ background: 'transparent', minHeight: '100vh', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', gap: '0px' }}>
       
       {/* View Switcher Container */}
       {viewMode === 'home' ? (
@@ -253,7 +253,7 @@ const GiftBrowsePage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
           
           {/* Hero Carousel Banner */}
-          <div style={{ padding: '20px 24px 0', position: 'relative', height: '380px', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
+          <div className="lh-hero-banner" style={{ padding: '20px 24px 0', position: 'relative', height: '380px', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
             <div style={{ height: '100%', width: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden' }}>
               {carouselSlides.map((slide, idx) => (
                 <div
@@ -367,7 +367,7 @@ const GiftBrowsePage = () => {
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-rose-gold)', margin: 0 }}>
                 Shop By Categories
               </h2>
-              <span style={{ fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>Fast Dispatch</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Fast Dispatch</span>
             </div>
             <div className="mobile-scroll-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '20px', justifyContent: 'space-between' }}>
               {[
@@ -390,13 +390,14 @@ const GiftBrowsePage = () => {
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
                 >
                   <div 
+                    className="lh-category-circle"
                     style={{ 
                       width: '76px', 
                       height: '76px', 
                       borderRadius: '50%', 
                       overflow: 'hidden', 
                       border: item.textInside ? '2px solid var(--brand-rose-gold)' : '2px solid var(--glass-border)', 
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                      boxShadow: 'var(--shadow-glass)',
                       transition: 'transform 0.2s',
                       display: 'flex',
                       alignItems: 'center',
@@ -435,7 +436,7 @@ const GiftBrowsePage = () => {
                     style={{
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+                    boxShadow: 'var(--shadow-glass)',
                     border: '1px solid var(--glass-border)',
                     cursor: 'pointer',
                     textAlign: 'center',
@@ -466,8 +467,9 @@ const GiftBrowsePage = () => {
               style={{
                 borderRadius: '16px',
                 overflow: 'hidden',
-                background: 'linear-gradient(135deg, #fcebeb 0%, #fae1e1 100%)',
-                border: '1px solid #f7d2d2',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--glass-border)',
+                boxShadow: 'var(--shadow-glass)',
                 padding: '32px 24px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -481,7 +483,7 @@ const GiftBrowsePage = () => {
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.8rem', fontWeight: 900, color: 'var(--brand-rose-gold)', lineHeight: '1.3', margin: 0 }}>
                 Birthdays Made Special
               </h2>
-              <p style={{ fontSize: '0.85rem', color: '#555', margin: 0 }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
                 Joyful, curated gift baskets and custom flower boxes for premium milestone gifting.
               </p>
               <button 
@@ -514,7 +516,7 @@ const GiftBrowsePage = () => {
                     minWidth: '110px',
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    boxShadow: 'var(--shadow-glass)',
                     border: '1px solid var(--glass-border)',
                     cursor: 'pointer',
                     textAlign: 'center',
@@ -538,7 +540,7 @@ const GiftBrowsePage = () => {
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', fontWeight: 900, color: 'var(--brand-rose-gold)', marginBottom: '4px', marginTop: 0 }}>
                 Tailored For Your Occasions
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#718096', margin: 0 }}>Filter luxury curations specifically aligned to your celebration goals.</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Filter luxury curations specifically aligned to your celebration goals.</p>
             </div>
 
             {/* Tabs */}
@@ -546,6 +548,7 @@ const GiftBrowsePage = () => {
               {occasionTabs.map((tab) => (
                 <button
                   key={tab}
+                  className={activeOccasionTab === tab ? "active-tab" : ""}
                   onClick={() => setActiveOccasionTab(tab)}
                   style={{
                     padding: '10px 18px',
@@ -608,7 +611,7 @@ const GiftBrowsePage = () => {
                 <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', fontWeight: 900, color: 'var(--brand-rose-gold)', margin: '0 0 4px' }}>
                   Your Gifting Toolkit
                 </h2>
-                <p style={{ fontSize: '0.85rem', color: '#718096', margin: 0 }}>All your premium gifting tools in one place</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>All your premium gifting tools in one place</p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
                 {featureCards.map((card) => {
@@ -693,6 +696,7 @@ const GiftBrowsePage = () => {
                 </span>
                 {(minPrice !== 100 || maxPrice !== 5000 || selectedGiftType !== 'All' || selectedFlowerType !== 'All' || selectedOccasionFilter !== 'All' || selectedSubcategory !== 'All') && (
                   <button 
+                    className="btn-text"
                     onClick={() => { setMinPrice(100); setMaxPrice(5000); setSelectedGiftType('All'); setSelectedFlowerType('All'); setSelectedOccasionFilter('All'); setSelectedSubcategory('All'); }}
                     style={{ border: 'none', background: 'transparent', color: 'var(--brand-rose-gold)', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}
                   >

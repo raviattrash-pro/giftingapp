@@ -13,13 +13,32 @@ const AdminCMSPage = () => {
     faqs: '',
     refund_policy: ''
   });
+  
+  const { 
+    addToast, 
+    checkoutConfig, 
+    fetchCheckoutConfig, 
+    updateCheckoutConfig 
+  } = useUiStore();
+
+  const [localConfig, setLocalConfig] = useState(checkoutConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const addToast = useUiStore((state) => state.addToast);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
-    fetchContent();
+    const init = async () => {
+      await Promise.all([fetchContent(), fetchCheckoutConfig()]);
+      setLoading(false);
+    };
+    init();
   }, []);
+
+  useEffect(() => {
+    if (checkoutConfig) {
+      setLocalConfig(checkoutConfig);
+    }
+  }, [checkoutConfig]);
 
   const fetchContent = async () => {
     try {
@@ -32,8 +51,6 @@ const AdminCMSPage = () => {
       });
     } catch (err) {
       addToast('Failed to load content', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -48,6 +65,19 @@ const AdminCMSPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    await updateCheckoutConfig(localConfig);
+    setSavingConfig(false);
+  };
+
+  const handleTierChange = (index, field, value) => {
+    const newTiers = [...localConfig.deliveryTiers];
+    newTiers[index][field] = Number(value);
+    setLocalConfig({ ...localConfig, deliveryTiers: newTiers });
   };
 
   const handleChange = (key, value) => {
@@ -109,6 +139,43 @@ const AdminCMSPage = () => {
             Save Content
           </Button>
         </form>
+      </Card>
+      <Card style={{ marginTop: '24px' }}>
+        <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', margin: '0 0 16px 0' }}>Checkout & Delivery Config</h2>
+        {localConfig && (
+          <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '12px' }}>Gift Wrapping Charge (₹)</h3>
+              <Input 
+                type="number" 
+                value={localConfig.wrappingCharge}
+                onChange={(e) => setLocalConfig({...localConfig, wrappingCharge: Number(e.target.value)})}
+              />
+            </div>
+            
+            <div>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '12px' }}>Distance-Based Delivery Tiers (₹)</h3>
+              {localConfig.deliveryTiers.map((tier, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '12px' }}>
+                  <span>Min Km:</span>
+                  <Input type="number" value={tier.min} onChange={(e) => handleTierChange(idx, 'min', e.target.value)} style={{ width: '80px' }} />
+                  <span>Max Km:</span>
+                  <Input type="number" value={tier.max} onChange={(e) => handleTierChange(idx, 'max', e.target.value)} style={{ width: '80px' }} />
+                  <span>Price:</span>
+                  <Input type="number" value={tier.price} onChange={(e) => handleTierChange(idx, 'price', e.target.value)} style={{ width: '100px' }} />
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '12px' }}>
+                <span style={{ fontWeight: 600 }}>Overage Price (&gt; 15km):</span>
+                <Input type="number" value={localConfig.overagePrice} onChange={(e) => setLocalConfig({...localConfig, overagePrice: Number(e.target.value)})} style={{ width: '100px' }} />
+              </div>
+            </div>
+
+            <Button type="submit" variant="primary" loading={savingConfig} icon={Save}>
+              Save Configurations
+            </Button>
+          </form>
+        )}
       </Card>
     </div>
   );

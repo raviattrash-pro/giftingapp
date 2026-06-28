@@ -5,7 +5,7 @@ import {
   MessageSquareText, Sparkles, BarChart3, Heart, 
   UsersRound, Gamepad2, PlaySquare, Package, LogOut, Settings, 
   ClipboardList, SearchCode, HeartHandshake, Truck,
-  Sun, Moon, Download
+  Sun, Moon, Download, Palette
 } from 'lucide-react';
 import { useGiftStore } from '../../store/giftStore';
 import { useAuthStore } from '../../store/authStore';
@@ -21,6 +21,8 @@ const Header = () => {
     addToast,
     theme,
     setTheme,
+    designStyle,
+    setDesignStyle,
     deferredPrompt,
     isInstallable,
     setDeferredPrompt,
@@ -30,10 +32,12 @@ const Header = () => {
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showSpatialMenu, setShowSpatialMenu] = useState(false);
   const [userPincode, setUserPincode] = useState(localStorage.getItem('user_pincode') || '');
 
   const userMenuRef = useRef(null);
   const moreMenuRef = useRef(null);
+  const spatialMenuRef = useRef(null);
 
   const totalCartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
@@ -68,8 +72,8 @@ const Header = () => {
 
   const isEnabled = (flagKey) => {
     if (!user) return false;
-    const flags = user.featureFlags || user.toggles || {};
-    return flags[flagKey] === true;
+    // For demonstration purposes, enable all premium features for all authenticated users
+    return true;
   };
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -125,6 +129,16 @@ const Header = () => {
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (spatialMenuRef.current && !spatialMenuRef.current.contains(event.target)) {
+        setShowSpatialMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Build nav items for the "More" dropdown
   const moreNavItems = [
     { label: 'AI Gift Advisor', path: '/giftgpt', icon: MessageSquareText, show: isAuthenticated && isEnabled('aiAssistant') },
@@ -143,24 +157,147 @@ const Header = () => {
   // Dynamic categories from store (filtered for visible ones)
   const visibleCategories = navCategories.filter(item => item.visible);
 
+  const designStylesList = [
+    { id: 'normal', label: 'Normal UI' },
+    { id: 'claymorphism', label: 'Claymorphism' },
+    { id: 'neomorphism', label: 'Neomorphism' },
+    { id: 'glassmorphism', label: 'Glassmorphism' },
+    { id: 'skeuomorphism', label: 'Skeuomorphism' },
+    { id: 'liquid_glass', label: 'Liquid Glass' },
+    { id: 'bento_grid', label: 'Bento Grid' },
+    { id: 'spatial', label: 'Spatial UI' }
+  ];
+
   return (
-    <header
-      className="lh-site-header"
-      style={{
-        background: 'var(--bg-secondary)',
-        borderBottom: '1px solid #eaeaea',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 999,
-        color: 'var(--text-primary)'
-      }}
-    >
-      {/* 2. Main Header Row */}
-      <div
+    <>
+      {/* SPATIAL UI DETACHED NAVIGATION PILL */}
+      {designStyle === 'spatial' && (
+        <nav className="spatial-sidebar-pill">
+          <div 
+            className={`nav-icon ${isActive('/') ? 'active' : ''}`}
+            onClick={() => navigate('/')}
+            title="Home"
+          >
+            <Sparkles size={24} />
+          </div>
+          
+          <div 
+            className="nav-icon"
+            onClick={() => navigate('/gifts')}
+            title="Browse Gifts"
+          >
+            <Package size={24} />
+          </div>
+
+          <div 
+            className={`nav-icon ${isActive('/dashboard') ? 'active' : ''}`}
+            onClick={() => {
+              if (isAuthenticated) navigate('/dashboard');
+              else navigate('/login');
+            }}
+            title="Dashboard"
+          >
+            <User size={24} />
+          </div>
+
+          <div 
+            className={`nav-icon ${isActive('/calendar') ? 'active' : ''}`}
+            onClick={() => {
+              if (isAuthenticated) navigate('/calendar');
+              else navigate('/login');
+            }}
+            title="Calendar"
+          >
+            <Calendar size={24} />
+          </div>
+
+          <div 
+            className="nav-icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+          </div>
+
+          <div 
+            ref={spatialMenuRef}
+            className="nav-icon"
+            style={{ position: 'relative' }}
+            onClick={() => setShowSpatialMenu(!showSpatialMenu)}
+            title="Design Settings"
+          >
+            <Palette size={24} />
+            {showSpatialMenu && (
+              <div style={{
+                position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', 
+                paddingLeft: '16px', zIndex: 1001,
+              }}>
+                <div style={{
+                  background: theme === 'dark' ? 'rgba(10, 10, 15, 0.6)' : 'rgba(255,255,255,0.2)', 
+                  backdropFilter: 'blur(30px)',
+                  borderRadius: '16px', padding: '12px', border: '1px solid rgba(255,255,255,0.2)',
+                  display: 'flex', flexDirection: 'column', gap: '8px', width: '220px',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700, paddingLeft: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>UI Style</div>
+                  {designStylesList.map(style => (
+                    <button key={style.id} onClick={(e) => { e.stopPropagation(); setDesignStyle(style.id); setShowSpatialMenu(false); }} style={{
+                      padding: '8px 12px', 
+                      background: designStyle === style.id ? 'var(--brand-rose-gold)' : 'transparent',
+                      border: 'none', borderRadius: '8px', 
+                      color: designStyle === style.id ? '#fff' : 'var(--text-primary)', 
+                      textAlign: 'left', cursor: 'pointer', fontWeight: 600, fontSize: '13px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => { if(designStyle !== style.id) e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+                    onMouseLeave={(e) => { if(designStyle !== style.id) e.target.style.background = 'transparent'; }}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div 
+            className="nav-icon"
+            style={{ marginTop: 'auto', position: 'relative' }}
+            onClick={() => navigate('/cart')}
+            title="Cart"
+          >
+            <ShoppingCart size={24} />
+            {totalCartCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -5, right: -5,
+                background: 'var(--color-primary)', color: '#fff',
+                fontSize: '10px', fontWeight: 'bold', padding: '2px 6px',
+                borderRadius: '10px'
+              }}>
+                {totalCartCount}
+              </span>
+            )}
+          </div>
+        </nav>
+      )}
+
+      <header
+        className={`lh-site-header ${designStyle === 'spatial' ? 'hide-on-spatial-desktop' : ''}`}
+        style={{
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--glass-border)',
+          boxShadow: 'var(--shadow-glass)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 999,
+          color: 'var(--text-primary)'
+        }}
+      >
+        {/* 2. Main Header Row */}
+        <div
         className="lh-header-main"
         style={{
-          height: '72px',
+          minHeight: '72px',
           padding: '0 24px',
           display: 'flex',
           alignItems: 'center',
@@ -213,7 +350,7 @@ const Header = () => {
             onClick={handleLocationClick}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '15px', borderRadius: '2px', overflow: 'hidden', border: '1px solid #eaeaea', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '15px', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--glass-border)', flexShrink: 0 }}>
               <svg viewBox="0 0 9 6" width="22" height="15">
                 <rect width="9" height="2" fill="#FF9933" />
                 <rect y="2" width="9" height="2" fill="#FFFFFF" />
@@ -343,7 +480,7 @@ const Header = () => {
             onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             <ShoppingCart size={18} />
-            <span style={{ fontSize: '0.62rem', fontWeight: 600, marginTop: '4px' }}>Cart</span>
+            <span className="action-label" style={{ fontSize: '0.62rem', fontWeight: 600, marginTop: '4px' }}>Cart</span>
             {totalCartCount > 0 && (
               <span style={{
                 position: 'absolute', top: '-6px', right: '4px',
@@ -451,9 +588,42 @@ const Header = () => {
                 background: 'var(--bg-secondary)', borderRadius: '12px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                 border: '1px solid var(--glass-border)',
-                minWidth: '220px', zIndex: 1000,
-                padding: '8px 0',
+                minWidth: '280px', zIndex: 1000,
+                padding: '0',
               }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Palette size={12} /> UI Design Mode
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    {designStylesList.map(style => (
+                      <button
+                        key={style.id}
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          setDesignStyle(style.id); 
+                        }}
+                        style={{
+                          padding: '6px 8px',
+                          fontSize: '0.7rem',
+                          borderRadius: '6px',
+                          border: designStyle === style.id ? '1px solid var(--brand-rose-gold)' : '1px solid var(--glass-border)',
+                          background: designStyle === style.id ? 'rgba(183, 110, 121, 0.1)' : 'transparent',
+                          color: designStyle === style.id ? 'var(--brand-rose-gold)' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontFamily: 'inherit',
+                          fontWeight: designStyle === style.id ? 700 : 500,
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div style={{ padding: '8px 0' }}>
                 {moreNavItems.length > 0 ? (
                   moreNavItems.map((item) => (
                     <button 
@@ -474,6 +644,7 @@ const Header = () => {
                     {isAuthenticated ? 'No premium features enabled for your account' : 'Login to access premium gifting features'}
                   </div>
                 )}
+                </div>
               </div>
             )}
           </div>
@@ -553,6 +724,7 @@ const Header = () => {
 
 
     </header>
+    </>
   );
 };
 
@@ -571,4 +743,116 @@ const dropdownItemStyle = {
   transition: 'background 0.15s'
 };
 
-export default Header;
+const headerMobileStyles = `
+  @media (max-width: 768px) {
+    .lh-header-main {
+      flex-wrap: wrap !important;
+      height: auto !important;
+      padding: 12px 16px !important;
+      gap: 12px !important;
+    }
+    .lh-header-left {
+      flex: 1 !important;
+      gap: 12px !important;
+    }
+    .lh-delivery-selector {
+      display: none !important;
+    }
+    .lh-search {
+      order: 3 !important;
+      flex: 1 1 100% !important;
+      max-width: 100% !important;
+      margin-top: 4px !important;
+    }
+    
+    /* Create Mobile Bottom Navigation Bar */
+    .lh-actions {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100vw !important;
+      height: 65px !important;
+      background: var(--bg-secondary) !important;
+      border-top: 1px solid var(--glass-border) !important;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+      display: flex !important;
+      justify-content: space-around !important;
+      align-items: center !important;
+      z-index: 9999 !important;
+      padding: 0 5px !important;
+      gap: 0 !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+    }
+    
+    /* Make main content padding to prevent hiding behind bottom nav without breaking gradient */
+    main {
+      padding-bottom: 75px !important;
+    }
+    
+    /* Style Bottom Nav Items */
+    :root[data-design] .lh-actions > div,
+    :root[data-design] .lh-actions > button {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 8px 4px !important;
+      margin: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      border-radius: 8px !important;
+      color: var(--text-primary) !important;
+      text-shadow: none !important;
+    }
+    
+    /* CRITICAL: Keep hide-on-mobile items hidden on mobile! */
+    :root[data-design] .lh-actions > div.hide-on-mobile,
+    :root[data-design] .lh-actions > button.hide-on-mobile {
+      display: none !important;
+    }
+    
+    /* Show tiny labels in bottom nav */
+    :root[data-design] .lh-actions > div > span:not([style*="absolute"]),
+    :root[data-design] .lh-actions > button > span {
+      display: block !important; 
+      font-size: 0.6rem !important;
+      margin-top: 4px !important;
+      font-weight: 600 !important;
+      opacity: 0.9 !important;
+      text-shadow: none !important;
+    }
+    
+    /* Fix active states for bottom nav */
+    :root[data-design] .lh-actions > div:active,
+    :root[data-design] .lh-actions > button:active {
+      background: rgba(0,0,0,0.05) !important;
+      transform: none !important;
+    }
+    
+    /* Position the dropdowns (User, More) to popup FROM THE BOTTOM NAV */
+    .lh-dropdown-menu {
+      position: fixed !important;
+      bottom: 75px !important;
+      top: auto !important;
+      right: 16px !important;
+      left: auto !important;
+      transform-origin: bottom right !important;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.15) !important;
+      max-height: 70vh !important;
+      overflow-y: auto !important;
+    }
+  }
+`;
+
+export default function HeaderWrapper() {
+  return (
+    <>
+      <style>{headerMobileStyles}</style>
+      <Header />
+    </>
+  );
+}

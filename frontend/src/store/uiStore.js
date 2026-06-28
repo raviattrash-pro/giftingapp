@@ -9,6 +9,10 @@ const getInitialTheme = () => {
   return (hour >= 6 && hour < 18) ? 'light' : 'dark';
 };
 
+const getInitialDesignStyle = () => {
+  return localStorage.getItem('design_style') || 'normal';
+};
+
 const defaultNavCategories = [
   { label: "Father's Day", category: 'Home & Living', visible: false },
   { label: 'Birthday', category: 'Traditional Gifts', visible: true },
@@ -36,6 +40,7 @@ export const useUiStore = create((set, get) => ({
   sidebarExpanded: true,
   activeTab: 'dashboard',
   theme: getInitialTheme(),
+  designStyle: getInitialDesignStyle(),
   deferredPrompt: null,
   isInstallable: false,
   toasts: [],
@@ -49,6 +54,11 @@ export const useUiStore = create((set, get) => ({
     console.log('[useUiStore] setTheme called with:', theme);
     localStorage.setItem('theme_override', theme);
     set({ theme });
+  },
+
+  setDesignStyle: (style) => {
+    localStorage.setItem('design_style', style);
+    set({ designStyle: style });
   },
 
   setDeferredPrompt: (prompt) => set({ deferredPrompt: prompt }),
@@ -114,6 +124,43 @@ export const useUiStore = create((set, get) => ({
     } catch (err) {
       console.error('Failed to save nav categories to server', err);
       get().addToast('Failed to save navigation settings.', 'error');
+      return false;
+    }
+  },
+
+  checkoutConfig: {
+    wrappingCharge: 37,
+    deliveryTiers: [
+      { min: 0, max: 1, price: 0 },
+      { min: 1, max: 3, price: 49 },
+      { min: 3, max: 6, price: 79 },
+      { min: 6, max: 15, price: 99 },
+    ],
+    overagePrice: 150 // Price for distance > 15km
+  },
+
+  fetchCheckoutConfig: async () => {
+    try {
+      // NOTE: Using /api/config instead of /admin/app-config so normal users can fetch it
+      const response = await api.get('/config/CHECKOUT_FEES');
+      if (response.data && response.data.value) {
+        set({ checkoutConfig: JSON.parse(response.data.value) });
+      }
+    } catch (err) {
+      console.log('Failed to fetch checkout config, using defaults', err);
+    }
+  },
+
+  updateCheckoutConfig: async (newConfig) => {
+    set({ checkoutConfig: newConfig });
+    try {
+      // Save it using the generic endpoint
+      await api.post('/config/CHECKOUT_FEES', { value: JSON.stringify(newConfig) });
+      get().addToast('Checkout config saved successfully.', 'success');
+      return true;
+    } catch (err) {
+      console.error('Failed to save checkout config to server', err);
+      get().addToast('Failed to save checkout config.', 'error');
       return false;
     }
   },

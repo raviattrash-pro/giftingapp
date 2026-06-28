@@ -76,7 +76,7 @@ const AdminRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { theme, setDeferredPrompt, setIsInstallable, addToast, fetchNavCategories } = useUiStore();
+  const { theme, designStyle, setDeferredPrompt, setIsInstallable, addToast, fetchNavCategories } = useUiStore();
   const { syncPendingOrders } = useGiftStore();
 
   useEffect(() => {
@@ -94,14 +94,12 @@ const App = () => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.body.setAttribute('data-theme', theme);
-    if (theme === 'dark') {
-      document.body.style.backgroundColor = '#070b13';
-      document.body.style.color = '#ffffff';
-    } else {
-      document.body.style.backgroundColor = '#fcf6f0';
-      document.body.style.color = '#2d3748';
-    }
-  }, [theme]);
+    document.documentElement.setAttribute('data-design', designStyle);
+    document.body.setAttribute('data-design', designStyle);
+    // Clear any hardcoded inline styles that override the design themes
+    document.body.style.backgroundColor = '';
+    document.body.style.color = '';
+  }, [theme, designStyle]);
 
   // 2. PWA event registration effect
   useEffect(() => {

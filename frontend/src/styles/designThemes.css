@@ -1,0 +1,923 @@
+/* ==========================================
+   Design Theme Switcher Styles - COMPREHENSIVE OVERRIDES
+   ========================================== */
+
+/* 1. Normal UI (Default) */
+/* (Relies on existing variables in variables.css) */
+
+/* ==========================================
+   2. Claymorphism
+   Physical Clay Slabs (Terra-cotta, Ultra Round)
+   ========================================== */
+:root[data-design="claymorphism"], [data-theme="light"][data-design="claymorphism"] {
+  --bg-primary: #ecd3c9; /* Warm textured tan background */
+  --bg-secondary: #ebd5c0; /* Light beige clay slabs */
+  --bg-tertiary: #d88471; /* Terra-cotta accents */
+  --radius-sm: 24px;
+  --radius-md: 32px;
+  --radius-lg: 40px;
+  --radius-xl: 50px;
+  /* Physical clay slab look: strong sharp drop shadow, tight inner highlights */
+  --shadow-glass: 
+    6px 10px 15px rgba(90, 50, 40, 0.18), 
+    inset -3px -5px 8px rgba(0, 0, 0, 0.12), 
+    inset 3px 5px 8px rgba(255, 255, 255, 0.6);
+  --glass-bg: #ebd5c0;
+  --glass-border: transparent;
+  --color-primary: #d88471; /* Terra-cotta red/orange */
+  --brand-rose-gold: #d88471; 
+  --text-primary: #59392e; /* Dark warm brown text */
+}
+
+/* Force claymorphism puffy shadows on all components with inline shadows or backgrounds */
+:root[data-design="claymorphism"] .glass-card,
+:root[data-design="claymorphism"] div[style*="box-shadow"],
+:root[data-design="claymorphism"] div[style*="linear-gradient(135deg, rgb(252, 235, 235)"], /* The pink banner */
+:root[data-design="claymorphism"] .lh-site-header,
+:root[data-design="claymorphism"] .lh-actions {
+  box-shadow: var(--shadow-glass) !important;
+  background: var(--bg-secondary) !important;
+  border: none !important; /* No borders in pure clay */
+}
+
+/* Force puffy buttons with realistic scaling (Excluding header, hero, and text links) */
+:root[data-design="claymorphism"] button:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="claymorphism"] .btn-premium {
+  border-radius: 50px !important;
+  background: var(--bg-secondary) !important;
+  box-shadow: 
+    10px 10px 20px rgba(181, 137, 120, 0.4), 
+    -6px -6px 16px rgba(255, 245, 235, 0.9),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.7) !important;
+  border: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary) !important;
+}
+
+/* Claymorphic inset shadow on press */
+:root[data-design="claymorphism"] button:active:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="claymorphism"] .btn-premium:active {
+  box-shadow: 
+    inset 6px 6px 12px rgba(181, 137, 120, 0.6), 
+    inset -4px -4px 10px rgba(255, 245, 235, 0.5) !important;
+  transform: scale(0.96);
+}
+
+/* Active tab permanently pressed state */
+:root[data-design="claymorphism"] button.active-tab {
+  box-shadow: 
+    inset 6px 6px 12px rgba(181, 137, 120, 0.6), 
+    inset -4px -4px 10px rgba(255, 245, 235, 0.5) !important;
+  color: var(--color-primary) !important;
+  font-weight: 800 !important;
+}
+
+/* Claymorphic Header Actions */
+:root[data-design="claymorphism"] .lh-actions > div,
+:root[data-design="claymorphism"] .lh-actions > button {
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: 
+    4px 4px 10px rgba(181, 137, 120, 0.4), 
+    -4px -4px 10px rgba(255, 245, 235, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+  background: var(--bg-secondary);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+:root[data-design="claymorphism"] .lh-actions > div:active,
+:root[data-design="claymorphism"] .lh-actions > button:active {
+  box-shadow: 
+    inset 4px 4px 8px rgba(181, 137, 120, 0.5), 
+    inset -4px -4px 8px rgba(255, 245, 235, 0.7);
+  transform: scale(0.96);
+}
+
+/* Claymorphic Subheader Links */
+:root[data-design="claymorphism"] .lh-site-header .custom-scrollbar button {
+  padding: 6px 16px !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    4px 4px 10px rgba(181, 137, 120, 0.4), 
+    -4px -4px 10px rgba(255, 245, 235, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.5) !important;
+  margin: 6px 0 !important;
+}
+
+:root[data-design="claymorphism"] .lh-site-header .custom-scrollbar button:active {
+  box-shadow: 
+    inset 4px 4px 8px rgba(181, 137, 120, 0.5), 
+    inset -4px -4px 8px rgba(255, 245, 235, 0.7) !important;
+  transform: scale(0.96);
+}
+
+/* Make images inside clay cards also round */
+:root[data-design="claymorphism"] img {
+  border-radius: var(--radius-md);
+}
+
+/* Fix the white background on the JPG logo by blending it into the clay */
+:root[data-design="claymorphism"] .lh-brand-logo {
+  mix-blend-mode: multiply;
+  border-radius: 0;
+}
+
+:root[data-theme="dark"][data-design="claymorphism"], [data-theme="dark"][data-design="claymorphism"] {
+  --bg-primary: #1e1b30; /* Darker purple base */
+  --bg-secondary: #272440;
+  --bg-tertiary: #191729;
+  --shadow-glass: 
+    6px 6px 16px rgba(0, 0, 0, 0.4), 
+    -6px -6px 16px rgba(255, 255, 255, 0.03), 
+    inset 4px 4px 10px rgba(255, 255, 255, 0.05), 
+    inset -4px -4px 10px rgba(0, 0, 0, 0.3);
+  --glass-bg: #272440;
+}
+
+/* ==========================================
+   3. Neomorphism
+   Extruded plastic look, same bg as elements
+   ========================================== */
+:root[data-design="neomorphism"], [data-theme="light"][data-design="neomorphism"] {
+  --bg-primary: #e0e0e0; /* Warm/neutral gray from screenshot */
+  --bg-secondary: #e0e0e0; /* MUST match primary for the effect */
+  --bg-tertiary: #d1d1d1;
+  --glass-bg: #e0e0e0;
+  --glass-border: transparent;
+  --shadow-glass: 
+    12px 12px 24px #bebebe, 
+    -12px -12px 24px #ffffff;
+  --radius-sm: 16px;
+  --radius-md: 24px;
+  --radius-lg: 32px;
+  --radius-xl: 40px;
+  --color-primary: #d9382e; /* Stark red/orange accent from screenshot */
+  --brand-rose-gold: #d9382e;
+  --text-primary: #333333;
+}
+
+/* Force neomorphism shadows on structural cards */
+:root[data-design="neomorphism"] .glass-card,
+:root[data-design="neomorphism"] div[style*="linear-gradient(135deg, rgb(252, 235, 235)"] {
+  box-shadow: var(--shadow-glass) !important;
+  background: var(--bg-secondary) !important;
+  border: none !important;
+}
+
+/* Force neomorphism buttons */
+:root[data-design="neomorphism"] button:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="neomorphism"] .btn-premium {
+  box-shadow: 
+    5px 5px 10px #bebebe, 
+    -5px -5px 10px #ffffff !important;
+  background: var(--bg-secondary) !important;
+  border: none !important;
+  border-radius: 50px !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s ease;
+}
+
+/* Inset shadow on button press */
+:root[data-design="neomorphism"] button:active:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="neomorphism"] .btn-premium:active {
+  box-shadow: 
+    inset 4px 4px 8px #bebebe, 
+    inset -4px -4px 8px #ffffff !important;
+}
+
+/* Active tab permanently pressed state */
+:root[data-design="neomorphism"] button.active-tab {
+  box-shadow: 
+    inset 4px 4px 8px #bebebe, 
+    inset -4px -4px 8px #ffffff !important;
+  color: var(--color-primary) !important;
+  font-weight: 800 !important;
+}
+
+/* Neomorphic Header Actions */
+:root[data-design="neomorphism"] .lh-actions > div,
+:root[data-design="neomorphism"] .lh-actions > button {
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+  background: var(--bg-secondary);
+  transition: box-shadow 0.2s ease;
+}
+
+:root[data-design="neomorphism"] .lh-actions > div:active,
+:root[data-design="neomorphism"] .lh-actions > button:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+}
+
+/* Neomorphic Subheader Links */
+:root[data-design="neomorphism"] .lh-site-header .custom-scrollbar button {
+  padding: 6px 16px !important;
+  border-radius: 20px !important;
+  box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff !important;
+  margin: 6px 0 !important;
+}
+
+:root[data-design="neomorphism"] .lh-site-header .custom-scrollbar button:active {
+  box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff !important;
+}
+
+/* Round images */
+:root[data-design="neomorphism"] img {
+  border-radius: var(--radius-md);
+}
+
+:root[data-theme="dark"][data-design="neomorphism"], [data-theme="dark"][data-design="neomorphism"] {
+  --bg-primary: #1a1e23;
+  --bg-secondary: #1a1e23;
+  --bg-tertiary: #14171a;
+  --glass-bg: #1a1e23;
+  --shadow-glass: 7px 7px 15px rgba(0, 0, 0, 0.5), -7px -7px 15px rgba(255, 255, 255, 0.05);
+  --color-primary: #d9382e;
+  --brand-rose-gold: #d9382e;
+}
+
+/* ==========================================
+   4. Glassmorphism
+   Vibrant background with frosted glass cards
+   ========================================== */
+:root[data-design="glassmorphism"], [data-theme="light"][data-design="glassmorphism"] {
+  --bg-primary: linear-gradient(105deg, #4facfe 0%, #5856d6 50%, #e860ff 100%);
+  --bg-secondary: rgba(255, 255, 255, 0.1);
+  --bg-tertiary: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --color-primary: #ffffff;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
+/* Glassmorphism Structural Elements */
+:root[data-design="glassmorphism"] .glass-card,
+:root[data-design="glassmorphism"] .lh-dropdown-menu,
+:root[data-design="glassmorphism"] .lh-delivery-selector {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important;
+}
+
+:root[data-design="glassmorphism"] .lh-site-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
+  position: sticky;
+}
+
+:root[data-design="glassmorphism"] .lh-site-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Glassmorphism Buttons (pill shape like screenshot) */
+:root[data-design="glassmorphism"] button:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="glassmorphism"] .btn-premium {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 50px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+}
+
+:root[data-design="glassmorphism"] button:active:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]),
+:root[data-design="glassmorphism"] .btn-premium:active {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: scale(0.96);
+}
+
+/* Glassmorphism Active Tab */
+:root[data-design="glassmorphism"] button.active-tab {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.9) !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+}
+
+/* Glassmorphism Header Actions */
+:root[data-design="glassmorphism"] .lh-actions > div,
+:root[data-design="glassmorphism"] .lh-actions > button {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+:root[data-design="glassmorphism"] .lh-actions > div:active,
+:root[data-design="glassmorphism"] .lh-actions > button:active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(0.96);
+}
+
+/* Glassmorphism Subheader Links */
+:root[data-design="glassmorphism"] .lh-site-header .custom-scrollbar button {
+  padding: 6px 16px !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  margin: 6px 0 !important;
+}
+
+:root[data-design="glassmorphism"] .lh-site-header .custom-scrollbar button:active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(0.96);
+}
+
+/* Make text inside glass cards white */
+:root[data-design="glassmorphism"] p,
+:root[data-design="glassmorphism"] span,
+:root[data-design="glassmorphism"] h1,
+:root[data-design="glassmorphism"] h2,
+:root[data-design="glassmorphism"] h3 {
+  color: #ffffff !important;
+}
+
+/* Make text inside glass cards white */
+:root[data-design="glassmorphism"] p,
+:root[data-design="glassmorphism"] span,
+:root[data-design="glassmorphism"] h1,
+:root[data-design="glassmorphism"] h2,
+:root[data-design="glassmorphism"] h3 {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"][data-design="glassmorphism"], [data-theme="dark"][data-design="glassmorphism"] {
+  --bg-primary: linear-gradient(120deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  --bg-secondary: rgba(0, 0, 0, 0.3);
+  --bg-tertiary: rgba(0, 0, 0, 0.2);
+  --glass-bg: rgba(20, 30, 48, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================
+   5. Skeuomorphism
+   Realistic, detailed textures and gradients (Wood & Gloss)
+   ========================================== */
+:root[data-design="skeuomorphism"], [data-theme="light"][data-design="skeuomorphism"] {
+  --bg-primary: #a86f45; /* Wood color */
+  --bg-secondary: linear-gradient(180deg, #f3f0ed 0%, #e6e2dd 100%); /* Paper/Plastic */
+  --bg-tertiary: #d4cfc9;
+  --glass-bg: radial-gradient(circle, #fffdf8 0%, #e5ddca 100%); /* Cream paper */
+  --glass-border: #998363;
+  --shadow-glass: inset 0 1px 3px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.5);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --text-primary: #222222;
+  --color-primary: #0a5da6; /* Glossy blue */
+}
+
+/* Wood background for the entire app */
+:root[data-design="skeuomorphism"] body {
+  background: 
+    radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.5) 100%),
+    repeating-linear-gradient(to right, #8b5a2b 0px, #8b5a2b 15px, #7f5227 15px, #7f5227 30px) !important;
+  background-attachment: fixed !important;
+}
+
+/* Glossy Blue Header with Orange Ribbon */
+:root[data-design="skeuomorphism"] .lh-site-header {
+  background: linear-gradient(180deg, #4da4e0 0%, #1765a6 50%, #0d5490 51%, #0b4a80 100%) !important;
+  border-bottom: 4px solid #f28b00 !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+
+/* Header Links and Text - Only target specific elements so we don't break dropdowns */
+:root[data-design="skeuomorphism"] .lh-actions > div,
+:root[data-design="skeuomorphism"] .lh-actions > button,
+:root[data-design="skeuomorphism"] .lh-brand *,
+:root[data-design="skeuomorphism"] .lh-delivery-selector * {
+  color: white !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.5);
+}
+
+/* Search Input */
+:root[data-design="skeuomorphism"] .lh-search input {
+  color: #333333 !important;
+  text-shadow: none !important;
+  background: #ffffff !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3) !important;
+  border: 1px solid #000000 !important;
+}
+
+/* Leather / Paper Glass Cards */
+:root[data-design="skeuomorphism"] .glass-card,
+:root[data-design="skeuomorphism"] .lh-dropdown-menu,
+:root[data-design="skeuomorphism"] .lh-delivery-selector {
+  background: radial-gradient(circle, #fffdf8 0%, #e5ddca 100%) !important;
+  border: 1px solid #bda88a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 5px 15px rgba(0,0,0,0.5) !important;
+  border-radius: 6px !important;
+}
+:root[data-design="skeuomorphism"] .glass-card *,
+:root[data-design="skeuomorphism"] .lh-dropdown-menu * {
+  color: #333333 !important;
+  text-shadow: none !important;
+}
+
+/* Standard Buttons: Glossy Silver/Gray */
+:root[data-design="skeuomorphism"] button:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]) {
+  background: linear-gradient(180deg, #f8f8f8 0%, #dcdcdc 50%, #c8c8c8 51%, #f0f0f0 100%) !important;
+  border: 1px solid #999 !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 2px 4px rgba(0,0,0,0.3) !important;
+  color: #333333 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+  transition: none !important;
+}
+
+:root[data-design="skeuomorphism"] button:active:not(.lh-site-header button):not(.lh-dropdown-menu button):not(.lh-hero-banner button):not(.btn-text):not([class*="slick"]) {
+  background: linear-gradient(180deg, #c8c8c8 0%, #dcdcdc 50%, #f8f8f8 100%) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+/* Premium/Primary Buttons: Glossy Orange */
+:root[data-design="skeuomorphism"] .btn-premium,
+:root[data-design="skeuomorphism"] button.active-tab {
+  background: linear-gradient(180deg, #ffc053 0%, #ff9800 50%, #e65c00 51%, #ff7b00 100%) !important;
+  border: 1px solid #b34700 !important;
+  border-radius: 4px !important;
+  color: white !important;
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.4) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+:root[data-design="skeuomorphism"] .btn-premium:active,
+:root[data-design="skeuomorphism"] button.active-tab:active {
+  background: linear-gradient(180deg, #e65c00 0%, #ff9800 50%, #ffc053 100%) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5) !important;
+}
+
+/* Header Buttons: Beveled */
+:root[data-design="skeuomorphism"] .lh-actions > div,
+:root[data-design="skeuomorphism"] .lh-actions > button {
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.1) 51%, rgba(0,0,0,0.2) 100%) !important;
+  border: 1px solid rgba(0,0,0,0.4) !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.3) !important;
+  color: white !important;
+  margin: 4px !important;
+  padding: 6px 12px !important;
+}
+
+:root[data-design="skeuomorphism"] .lh-actions > div:active,
+:root[data-design="skeuomorphism"] .lh-actions > button:active {
+  background: rgba(0,0,0,0.3) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5) !important;
+}
+
+/* Subheader Links (Glossy Silver) */
+:root[data-design="skeuomorphism"] .lh-site-header .custom-scrollbar button {
+  background: linear-gradient(180deg, #f8f8f8 0%, #dcdcdc 50%, #c8c8c8 51%, #f0f0f0 100%) !important;
+  border: 1px solid #999 !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,1), 0 2px 4px rgba(0,0,0,0.3) !important;
+  color: #333333 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+  margin: 6px 0 !important;
+  padding: 6px 16px !important;
+}
+
+:root[data-design="skeuomorphism"] .lh-site-header .custom-scrollbar button:active {
+  background: linear-gradient(180deg, #c8c8c8 0%, #dcdcdc 50%, #f8f8f8 100%) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+:root[data-theme="dark"][data-design="skeuomorphism"], [data-theme="dark"][data-design="skeuomorphism"] {
+  --bg-primary: #1a1a1a;
+}
+
+/* ==========================================
+   6. Liquid Glass UI (Spatial/VisionOS Style)
+   Flowy, extreme blur, highly translucent
+   ========================================== */
+:root[data-design="liquid_glass"], [data-theme="light"][data-design="liquid_glass"] {
+  /* Beautiful Bright Pastel Gradient - ensures dark text is always legible while looking incredibly premium! */
+  --bg-image-url: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop');
+  --bg-secondary: rgba(255, 255, 255, 0.2);
+  --bg-tertiary: rgba(255, 255, 255, 0.35);
+  --radius-sm: 24px;
+  --radius-md: 32px;
+  --radius-lg: 48px;
+  --radius-xl: 64px;
+  --glass-bg: rgba(255, 255, 255, 0.05); /* Almost completely clear */
+  --glass-border: rgba(255, 255, 255, 0.6); /* Bright distinct border */
+  /* Thick glossy liquid inner glow + drop shadow */
+  --shadow-glass: 0 15px 35px rgba(0, 0, 0, 0.15), inset 0 0 0 1.5px rgba(255, 255, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+:root[data-theme="dark"][data-design="liquid_glass"], [data-theme="dark"][data-design="liquid_glass"] {
+  /* Real Living Room Background like VisionOS screenshot */
+  --bg-image-url: url('https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=1920&auto=format&fit=crop');
+  --bg-secondary: rgba(255, 255, 255, 0.1);
+  --bg-tertiary: rgba(255, 255, 255, 0.2);
+  --glass-bg: rgba(0, 0, 0, 0.1); /* Almost completely clear */
+  --glass-border: rgba(255, 255, 255, 0.4);
+  /* Thick glossy liquid inner glow + strong drop shadow for dark mode */
+  --shadow-glass: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1.5px rgba(255, 255, 255, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+/* OUT OF FOCUS BACKGROUND FOR SPATIAL UI */
+:root[data-design="liquid_glass"] body {
+  background: var(--bg-primary) !important; /* Let index.css keep original background as failsafe */
+}
+:root[data-theme="light"][data-design="liquid_glass"] body {
+  background: #f0f0f0 !important;
+}
+:root[data-theme="dark"][data-design="liquid_glass"] body {
+  background: #050505 !important;
+}
+
+:root[data-design="liquid_glass"] body::before {
+  content: "";
+  position: fixed;
+  top: -50px; left: -50px; right: -50px; bottom: -50px; /* Oversize to hide blur edges */
+  background-image: var(--bg-image-url);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Light mode background filtering - Bright and vibrant */
+:root[data-theme="light"][data-design="liquid_glass"] body::before {
+  filter: blur(20px) brightness(1.1) contrast(1.0);
+}
+
+/* Dark mode background filtering - Needs to be very dark so white text is legible! */
+:root[data-theme="dark"][data-design="liquid_glass"] body::before {
+  filter: blur(35px) brightness(0.35) contrast(1.1);
+}
+
+/* Spatial Glass Panels */
+:root[data-design="liquid_glass"] .glass-card,
+:root[data-design="liquid_glass"] .lh-dropdown-menu,
+:root[data-design="liquid_glass"] .lh-delivery-selector {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(35px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+  border: none !important;
+  box-shadow: var(--shadow-glass) !important;
+  border-radius: 32px !important;
+}
+
+/* Spatial Header */
+:root[data-design="liquid_glass"] .lh-site-header {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-design="liquid_glass"] .lh-site-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(35px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-glass) !important;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Spatial Pill Buttons */
+:root[data-design="liquid_glass"] button:not(.btn-text):not([class*="slick"]),
+:root[data-design="liquid_glass"] .lh-actions > div,
+:root[data-design="liquid_glass"] .lh-actions > button,
+:root[data-design="liquid_glass"] .btn-premium {
+  background: var(--bg-secondary) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  border: none !important;
+  border-radius: 50px !important;
+  box-shadow: var(--shadow-glass) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* Fix text and icon colors in header */
+:root[data-design="liquid_glass"] .lh-actions > div > span,
+:root[data-design="liquid_glass"] .lh-actions > div > svg {
+  color: var(--text-primary) !important;
+}
+
+:root[data-design="liquid_glass"] button:active:not(.btn-text):not([class*="slick"]),
+:root[data-design="liquid_glass"] .lh-actions > div:active,
+:root[data-design="liquid_glass"] .lh-actions > button:active {
+  background: var(--bg-tertiary) !important;
+  transform: scale(0.95);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2) !important;
+}
+
+:root[data-design="liquid_glass"] button.active-tab {
+  background: var(--text-primary) !important;
+  color: var(--bg-primary) !important; /* Invert text */
+}
+
+/* ==========================================
+   7. Bento Grid UI
+   Playful, neo-brutalism, colorful blocks
+   ========================================== */
+:root[data-design="bento_grid"], [data-theme="light"][data-design="bento_grid"] {
+  --bg-primary: #f0f4f8; /* Soft light background */
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #ffffff;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --glass-border: #111111;
+  --shadow-glass: 4px 4px 0px #111111;
+  --glass-bg: #ffffff;
+  --text-primary: #111111;
+}
+
+:root[data-theme="dark"][data-design="bento_grid"], [data-theme="dark"][data-design="bento_grid"] {
+  --bg-primary: #111111;
+  --bg-secondary: #1a1a1a;
+  --glass-border: #333333;
+  --shadow-glass: 4px 4px 0px #000000;
+  --glass-bg: #1a1a1a;
+  --text-primary: #ffffff;
+}
+
+/* Base Bento Card Style - Thick borders */
+:root[data-design="bento_grid"] .glass-card,
+:root[data-design="bento_grid"] .lh-delivery-selector,
+:root[data-design="bento_grid"] .lh-dropdown-menu {
+  border: 2px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-glass) !important;
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+:root[data-design="bento_grid"] .glass-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--glass-border) !important;
+}
+
+/* Colorful Neo-Brutalism for Light Mode (Based on User's Reference Images) */
+:root[data-theme="light"][data-design="bento_grid"] .glass-card:nth-child(4n+1) {
+  background: #FF6B00 !important; /* Vibrant Orange */
+  color: #FFFFFF !important;
+}
+:root[data-theme="light"][data-design="bento_grid"] .glass-card:nth-child(4n+2) {
+  background: #93C5FD !important; /* Light Blue */
+  color: #111111 !important;
+}
+:root[data-theme="light"][data-design="bento_grid"] .glass-card:nth-child(4n+3) {
+  background: #F7F3E9 !important; /* Cream */
+  color: #111111 !important;
+}
+:root[data-theme="light"][data-design="bento_grid"] .glass-card:nth-child(4n+4) {
+  background: #1D6586 !important; /* Deep Blue */
+  color: #FFFFFF !important;
+}
+
+/* Force children of these colorful cards to inherit the high-contrast text color */
+:root[data-theme="light"][data-design="bento_grid"] .glass-card h1,
+:root[data-theme="light"][data-design="bento_grid"] .glass-card h2,
+:root[data-theme="light"][data-design="bento_grid"] .glass-card h3,
+:root[data-theme="light"][data-design="bento_grid"] .glass-card p,
+:root[data-theme="light"][data-design="bento_grid"] .glass-card span,
+:root[data-theme="light"][data-design="bento_grid"] .glass-card div {
+  color: inherit !important;
+}
+
+/* Make buttons match the brutalist aesthetic */
+:root[data-design="bento_grid"] button:not(.btn-text):not([class*="slick"]) {
+  border: 2px solid var(--glass-border) !important;
+  border-radius: 50px !important;
+  box-shadow: 2px 2px 0px var(--glass-border) !important;
+  font-weight: 800 !important;
+}
+
+:root[data-design="bento_grid"] button:active:not(.btn-text):not([class*="slick"]) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0px 0px 0px var(--glass-border) !important;
+}
+
+/* ==========================================
+   8. Spatial UI Design
+   Extreme depth, floating panels, heavy shadows
+   ========================================== */
+:root[data-design="spatial"], [data-theme="light"][data-design="spatial"] {
+  --bg-primary: #e2e8f0;
+  --bg-secondary: rgba(255, 255, 255, 0.95);
+  --bg-tertiary: rgba(255, 255, 255, 0.7);
+  --shadow-glass: 0 30px 60px rgba(0, 0, 0, 0.15), 0 -10px 30px rgba(255, 255, 255, 1);
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --glass-border: rgba(255, 255, 255, 1);
+}
+:root[data-theme="dark"][data-design="spatial"], [data-theme="dark"][data-design="spatial"] {
+  --bg-primary: #020617;
+  --bg-secondary: rgba(15, 23, 42, 0.95);
+  --shadow-glass: 0 30px 60px rgba(0, 0, 0, 0.6), 0 -10px 30px rgba(255, 255, 255, 0.02);
+  --glass-bg: rgba(15, 23, 42, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+/* -------------------------------------------
+   Spatial UI Layout Architecture
+   ------------------------------------------- */
+
+/* Physical Environment Background */
+:root[data-design="spatial"] body {
+  background: var(--bg-primary) !important;
+}
+
+:root[data-theme="light"][data-design="spatial"] body {
+  background: #f0f0f0 !important;
+}
+
+:root[data-theme="dark"][data-design="spatial"] body {
+  background: #050505 !important;
+}
+
+:root[data-design="spatial"] body::before {
+  content: "";
+  position: fixed;
+  top: -50px; left: -50px; right: -50px; bottom: -50px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Light Mode Environment (Bright Room) */
+:root[data-theme="light"][data-design="spatial"] body::before {
+  background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop'); /* Bright Luxury Living Room */
+  filter: blur(40px) brightness(1.2) contrast(0.9);
+}
+
+/* Dark Mode Environment (Cozy Dark Room) */
+:root[data-theme="dark"][data-design="spatial"] body::before {
+  background-image: url('https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=1920&auto=format&fit=crop'); /* Dark Living Room */
+  filter: blur(40px) brightness(0.4) contrast(1.1);
+}
+
+/* Spatial Layout Flex Container */
+.spatial-layout-wrapper {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  width: 100vw;
+  padding: 40px;
+  gap: 32px;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Detached Side Navigation Pill */
+.spatial-sidebar-pill {
+  width: 80px;
+  height: auto;
+  min-height: 500px;
+  max-height: 85vh;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-glass);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 0;
+  gap: 24px;
+  z-index: 100;
+}
+:root[data-theme="dark"][data-design="spatial"] .spatial-sidebar-pill {
+  background: rgba(10, 10, 15, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Navigation Icons within Pill */
+.spatial-sidebar-pill .nav-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+}
+
+.spatial-sidebar-pill .nav-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.spatial-sidebar-pill .nav-icon.active {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+}
+
+:root[data-theme="dark"][data-design="spatial"] .spatial-sidebar-pill .nav-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="dark"][data-design="spatial"] .spatial-sidebar-pill .nav-icon.active {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+}
+
+/* The Main Floating Window */
+.spatial-main-window {
+  flex: 1;
+  max-width: 1400px;
+  height: 85vh;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border-radius: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.5);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  /* Smooth scrolling inside the glass window */
+  scrollbar-width: none; /* Firefox */
+}
+.spatial-main-window::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+:root[data-theme="dark"][data-design="spatial"] .spatial-main-window {
+  background: rgba(20, 20, 25, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Mobile Fallback: If screen is small, ignore spatial layout and revert to normal */
+@media (max-width: 1024px) {
+  .spatial-layout-wrapper {
+    display: block !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .spatial-sidebar-pill {
+    display: none !important;
+  }
+  .spatial-main-window {
+    height: auto !important;
+    max-width: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    background: transparent;
+    overflow: visible !important;
+  }
+  .hide-on-spatial-desktop {
+    display: block !important;
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 1025px) {
+  .hide-on-spatial-desktop {
+    display: none !important;
+  }
+}

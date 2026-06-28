@@ -22,12 +22,13 @@ const GiftCheckoutPage = () => {
   const navigate = useNavigate();
   const { cart, updateCartItemQuantity, removeFromCart, checkout, clearCart, paymentSettings, fetchPaymentSettings, fetchDeliveryQuote } = useGiftStore();
   const { recipients } = useRecipientStore();
-  const { addToast } = useUiStore();
+  const { addToast, checkoutConfig, fetchCheckoutConfig } = useUiStore();
   const { addTransaction } = useBudgetStore();
   const { addNotification } = useNotificationStore();
 
   const [checkoutComplete, setCheckoutComplete] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [addWrapping, setAddWrapping] = useState(false);
 
   // Recipient details
   const [recipientName, setRecipientName] = useState('');
@@ -69,6 +70,7 @@ const GiftCheckoutPage = () => {
 
   useEffect(() => {
     fetchPaymentSettings();
+    fetchCheckoutConfig(); // <--- Add this
     const fetchDeliveryConfig = async () => {
       try {
         const confRes = await api.get('/config/DELIVERY_CHARGES_HIDDEN');
@@ -80,7 +82,7 @@ const GiftCheckoutPage = () => {
       } catch (err) {}
     };
     fetchDeliveryConfig();
-  }, [fetchPaymentSettings]);
+  }, [fetchPaymentSettings, fetchCheckoutConfig]);
 
   useEffect(() => {
     const getQuote = async () => {
@@ -91,20 +93,7 @@ const GiftCheckoutPage = () => {
           const hour = scheduledTime ? parseInt(scheduledTime.split(':')[0]) : 12;
           const surcharge = (hour >= 8 && hour < 19) ? 75 : 0;
           
-          let storePin = 400001;
-          try {
-            const localAddr = localStorage.getItem('admin_store_address');
-            if (localAddr) {
-              const m = localAddr.match(/\d{5,6}/);
-              if (m) storePin = parseInt(m[0], 10);
-            } else {
-              const confRes = await api.get('/config/STORE_ADDRESS');
-              if (confRes.data && confRes.data.value) {
-                const m = confRes.data.value.match(/\d{5,6}/);
-                if (m) storePin = parseInt(m[0], 10);
-              }
-            }
-          } catch(e) {}
+          let storePin = 560001; // <--- Hardcoded as per user instructions
 
           let userPin = parseInt(pincode, 10) || 400001;
           let distanceKm = 1;
@@ -115,6 +104,23 @@ const GiftCheckoutPage = () => {
           } catch(e) {
             distanceKm = Math.abs(storePin - userPin);
             if (distanceKm === 0) distanceKm = 1;
+          }
+
+          let localStoreTotal = 0;
+          let tierFound = false;
+          if (checkoutConfig && checkoutConfig.deliveryTiers) {
+            for (const tier of checkoutConfig.deliveryTiers) {
+              if (distanceKm >= tier.min && distanceKm <= tier.max) {
+                localStoreTotal = tier.price;
+                tierFound = true;
+                break;
+              }
+            }
+            if (!tierFound && distanceKm > 15) {
+              localStoreTotal = checkoutConfig.overagePrice || 150;
+            }
+          } else {
+            localStoreTotal = 50 + distanceKm * 5; // fallback
           }
 
           const porterTotal = 50 + distanceKm * 9 + surcharge;
@@ -147,10 +153,10 @@ const GiftCheckoutPage = () => {
               delhiveryTotal = 65; blueDartTotal = 95; dtdcTotal = 55; indiaPostTotal = 45;
           }
 
-          const porterCharge = Math.round(porterTotal * (userSharePct/100));
-          const rapidoCharge = Math.round(rapidoTotal * (userSharePct/100));
-          const porterAdmin = Math.round(porterTotal * (adminSharePct/100));
-          const rapidoAdmin = Math.round(rapidoTotal * (adminSharePct/100));
+          const porterCharge = Math.round(localStoreTotal * (userSharePct/100));
+          const rapidoCharge = Math.round(localStoreTotal * (userSharePct/100));
+          const porterAdmin = Math.round(localStoreTotal * (adminSharePct/100));
+          const rapidoAdmin = Math.round(localStoreTotal * (adminSharePct/100));
           
           const quotes = {
             allowInstant: true,
@@ -221,7 +227,8 @@ const GiftCheckoutPage = () => {
   const deliveryCost = hideDeliveryCharges ? 0 : baseDeliveryCost;
   
   const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const grandTotal = Math.max(0, subtotal + tax + deliveryCost - discount);
+  const wrappingCost = addWrapping ? (checkoutConfig?.wrappingCharge || 37) : 0;
+  const grandTotal = Math.max(0, subtotal + tax + deliveryCost + wrappingCost - discount);
 
   const handleApplyCoupon = async () => {
     if (!couponCodeInput.trim()) return;
@@ -977,17 +984,34 @@ const GiftCheckoutPage = () => {
                     <span>Luxury Tax ({avgTaxRate}%)</span>
                     <span>₹{tax}</span>
                   </div>
-                  <div className="flex-between" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div className="flex-between" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     <span>Courier & Handling</span>
                     <span>₹{deliveryCost}</span>
                   </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--glass-border)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={addWrapping} 
+                        onChange={(e) => setAddWrapping(e.target.checked)}
+                        style={{ accentColor: 'var(--brand-rose-gold)' }}
+                      />
+                      Add Premium Gift Wrapping
+                    </label>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {addWrapping ? `₹${checkoutConfig?.wrappingCharge || 37}` : `+₹${checkoutConfig?.wrappingCharge || 37}`}
+                    </span>
+                  </div>
+
                   {appliedCoupon && (
                     <div className="flex-between" style={{ fontSize: '0.85rem', color: 'var(--color-success)', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
                       <span>Discount ({appliedCoupon.code})</span>
                       <span>-₹{appliedCoupon.discountAmount}</span>
                     </div>
                   )}
-                  <div className="flex-between" style={{ fontSize: '1.15rem', fontWeight: 700, fontFamily: 'var(--font-title)' }}>
+                  
+                  <div className="flex-between" style={{ fontSize: '1.15rem', fontWeight: 700, fontFamily: 'var(--font-title)', marginTop: '8px' }}>
                     <span>Grand Total</span>
                     <span style={{ color: 'var(--color-primary)' }}>₹{grandTotal}</span>
                   </div>
