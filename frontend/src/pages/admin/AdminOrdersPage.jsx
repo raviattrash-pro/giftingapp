@@ -22,6 +22,7 @@ const AdminOrdersPage = () => {
 
   // Confirmation modal state
   const [orderToConfirm, setOrderToConfirm] = useState(null);
+  const [billOrder, setBillOrder] = useState(null);
   const [storeAddress, setStoreAddress] = useState('Fetching...');
 
   const fetchConfigs = async () => {
@@ -43,8 +44,21 @@ const AdminOrdersPage = () => {
 
     try {
       const response = await api.get('/admin/orders');
-      setOrders(response.data || []);
-      localStorage.setItem('admin_orders_cache', JSON.stringify(response.data || []));
+      let fetchedOrders = response.data || [];
+      
+      try {
+        const wrapsStr = localStorage.getItem('order_wraps_cache');
+        if (wrapsStr) {
+          const wraps = JSON.parse(wrapsStr);
+          fetchedOrders = fetchedOrders.map(o => ({
+            ...o,
+            wrappingCharge: wraps[o.id] || 0
+          }));
+        }
+      } catch (e) {}
+
+      setOrders(fetchedOrders);
+      localStorage.setItem('admin_orders_cache', JSON.stringify(fetchedOrders));
     } catch (err) {
       console.error(err);
       if (!cached) addToast('Failed to fetch orders list.', 'error');
@@ -380,14 +394,14 @@ const AdminOrdersPage = () => {
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Receipt</span>
                   {order.paymentScreenshot === 'razorpay_verified_payment' ? (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      background: 'rgba(0, 245, 212, 0.1)', border: '1px solid var(--color-success)',
-                      color: 'var(--color-success)', padding: '4px 8px', borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.7rem', fontWeight: 600, width: 'fit-content'
-                    }}>
-                      ✅ Razorpay Verified
-                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      icon={FileText} 
+                      onClick={() => setBillOrder(order)}
+                    >
+                      View Bill
+                    </Button>
                   ) : order.paymentScreenshot ? (
                     <div 
                       onClick={() => openScreenshotModal(order.paymentScreenshot, order.id)}
@@ -615,7 +629,126 @@ const AdminOrdersPage = () => {
           </div>
         )}
       </Modal>
-
+      {/* Bill Modal */}
+      <Modal isOpen={!!billOrder} onClose={() => setBillOrder(null)} size="lg" title="Order Invoice">
+        {billOrder && (
+          <div id="invoice-print-area" style={{ padding: '20px', background: '#ffffff', color: '#000000', borderRadius: '8px', fontFamily: 'sans-serif' }}>
+             {/* Header with Logo */}
+             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #eaeaea', paddingBottom: '16px', marginBottom: '20px' }}>
+                <img src="/logo.jpg" alt="Logo" style={{ height: '60px', objectFit: 'contain' }} />
+                <div style={{ textAlign: 'right' }}>
+                   <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>INVOICE</h2>
+                   <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '0.9rem' }}>#{`ORD_${billOrder.id}`}</p>
+                   <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '0.9rem' }}>Date: {new Date(billOrder.createdAt).toLocaleDateString()}</p>
+                </div>
+             </div>
+             
+             {/* Customer Details */}
+             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                   <h4 style={{ margin: '0 0 8px 0', color: '#444' }}>Billed To:</h4>
+                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#333' }}>{billOrder.user?.fullName || 'Customer'}</p>
+                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#333' }}>{billOrder.user?.email || ''}</p>
+                </div>
+                {billOrder.deliveryAddress && (
+                  <div style={{ textAlign: 'right' }}>
+                     <h4 style={{ margin: '0 0 8px 0', color: '#444' }}>Shipped To:</h4>
+                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#333' }}>{billOrder.recipient?.name || ''}</p>
+                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#333', maxWidth: '200px' }}>{billOrder.deliveryAddress}</p>
+                  </div>
+                )}
+             </div>
+             
+             {/* Items Table */}
+             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+                <thead>
+                   <tr style={{ background: '#f8f9fa', borderBottom: '1px solid #dee2e6' }}>
+                      <th style={{ padding: '10px', textAlign: 'left', color: '#444' }}>Item</th>
+                      <th style={{ padding: '10px', textAlign: 'center', color: '#444' }}>Qty</th>
+                      <th style={{ padding: '10px', textAlign: 'right', color: '#444' }}>Price</th>
+                      <th style={{ padding: '10px', textAlign: 'right', color: '#444' }}>Total</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   <tr style={{ borderBottom: '1px solid #eaeaea' }}>
+                      <td style={{ padding: '10px' }}>
+                         <p style={{ margin: 0, fontWeight: 600 }}>{billOrder.giftName}</p>
+                         <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>{billOrder.giftCategory || 'Gift'}</p>
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>{billOrder.quantity}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>₹{Math.round(billOrder.amount / (billOrder.quantity || 1))}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>₹{billOrder.amount}</td>
+                   </tr>
+                </tbody>
+             </table>
+             
+             {/* Totals & Payment Info */}
+             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ width: '50%' }}>
+                   <h4 style={{ margin: '0 0 8px 0', color: '#444' }}>Payment Info:</h4>
+                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#333' }}>Status: {getStatusLabel(billOrder.status)}</p>
+                   <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem', color: '#333' }}>Transaction Ref: {billOrder.transactionId || 'N/A'}</p>
+                </div>
+                <div style={{ width: '40%' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ color: '#666' }}>Items Subtotal:</span>
+                      <span style={{ color: '#333' }}>₹{billOrder.amount}</span>
+                   </div>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ color: '#666' }}>Delivery Charge:</span>
+                      <span style={{ color: '#333' }}>₹{billOrder.deliveryCharge || 0}</span>
+                   </div>
+                   {billOrder.wrappingCharge > 0 && (
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#666' }}>Gift Wrapping:</span>
+                        <span style={{ color: '#333' }}>₹{billOrder.wrappingCharge}</span>
+                     </div>
+                   )}
+                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #eaeaea', color: '#000' }}>
+                      <span>Grand Total:</span>
+                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0)}</span>
+                   </div>
+                </div>
+             </div>
+             
+             {/* Print Button */}
+             <div className="no-print" style={{ marginTop: '30px', textAlign: 'center' }}>
+                <Button variant="primary" onClick={() => {
+                   const printContents = document.getElementById('invoice-print-area').innerHTML;
+                   const printWindow = window.open('', '_blank');
+                   printWindow.document.write(`
+                     <html>
+                       <head>
+                         <title>Invoice - ORD_${billOrder.id}</title>
+                         <style>
+                           body { font-family: sans-serif; padding: 40px; color: #000; }
+                           .no-print { display: none !important; }
+                           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                           th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eaeaea; }
+                           th { background: #f8f9fa; }
+                         </style>
+                       </head>
+                       <body>
+                         ${printContents}
+                         <script>
+                           window.onload = function() {
+                             setTimeout(function() {
+                               window.print();
+                               window.close();
+                             }, 250);
+                           };
+                         </script>
+                       </body>
+                     </html>
+                   `);
+                   printWindow.document.close();
+                }} icon={FileText}>
+                   Print Invoice
+                </Button>
+             </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

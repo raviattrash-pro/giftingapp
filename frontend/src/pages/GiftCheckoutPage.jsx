@@ -28,7 +28,7 @@ const GiftCheckoutPage = () => {
 
   const [checkoutComplete, setCheckoutComplete] = useState(false);
   const [orderId, setOrderId] = useState('');
-  const [addWrapping, setAddWrapping] = useState(false);
+  const [addWrapping, setAddWrapping] = useState(true);
 
   // Recipient details
   const [recipientName, setRecipientName] = useState('');
