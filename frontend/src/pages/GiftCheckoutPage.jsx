@@ -336,8 +336,10 @@ const GiftCheckoutPage = () => {
               try {
                 const cachedStr = localStorage.getItem('user_orders_cache');
                 const cachedOrders = cachedStr ? JSON.parse(cachedStr) : [];
+                const rawId = result.orderId || response.razorpay_order_id || '';
+                const cleanId = rawId.toString().replace('ord_', '');
                 const optimisticOrder = {
-                  id: result.orderId || response.razorpay_order_id,
+                  id: cleanId,
                   status: 'PENDING_VERIFICATION',
                   createdAt: new Date().toISOString(),
                   amount: grandTotal,

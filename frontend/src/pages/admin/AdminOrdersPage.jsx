@@ -43,7 +43,7 @@ const AdminOrdersPage = () => {
     }
 
     try {
-      const response = await api.get('/admin/orders');
+      const response = await api.get(`/admin/orders?t=${Date.now()}`);
       let fetchedOrders = response.data || [];
       
       try {

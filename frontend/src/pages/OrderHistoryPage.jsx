@@ -133,7 +133,7 @@ const OrderHistoryPage = () => {
         }
       };
 
-      const res = await api.get('/orders');
+      const res = await api.get(`/orders?t=${Date.now()}`);
       let newOrders = mergePendingOrders(res.data || []);
       
       try {
