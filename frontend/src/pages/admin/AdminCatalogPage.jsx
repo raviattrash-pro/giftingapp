@@ -462,28 +462,34 @@ const AdminCatalogPage = () => {
           <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Premium Gift Wrapping Charge (₹)</h4>
-              <Input 
+              <input 
                 type="number" 
+                className="glass-input"
+                style={{ width: '150px', padding: '10px 14px', borderRadius: '8px' }}
                 value={localCheckoutConfig.wrappingCharge}
                 onChange={(e) => setLocalCheckoutConfig({...localCheckoutConfig, wrappingCharge: Number(e.target.value)})}
               />
             </div>
             
             <div>
-              <h4 style={{ fontSize: '0.95rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Distance-Based Delivery Tiers (₹)</h4>
-              {localCheckoutConfig.deliveryTiers.map((tier, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.85rem' }}>Min Km:</span>
-                  <Input type="number" value={tier.min} onChange={(e) => handleTierChange(idx, 'min', e.target.value)} style={{ width: '80px' }} />
-                  <span style={{ fontSize: '0.85rem' }}>Max Km:</span>
-                  <Input type="number" value={tier.max} onChange={(e) => handleTierChange(idx, 'max', e.target.value)} style={{ width: '80px' }} />
-                  <span style={{ fontSize: '0.85rem' }}>Price:</span>
-                  <Input type="number" value={tier.price} onChange={(e) => handleTierChange(idx, 'price', e.target.value)} style={{ width: '100px' }} />
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '12px' }}>
-                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Overage Price (&gt; 15km):</span>
-                <Input type="number" value={localCheckoutConfig.overagePrice} onChange={(e) => setLocalCheckoutConfig({...localCheckoutConfig, overagePrice: Number(e.target.value)})} style={{ width: '100px' }} />
+              <h4 style={{ fontSize: '0.95rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>Distance-Based Delivery Tiers (₹)</h4>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {localCheckoutConfig.deliveryTiers.map((tier, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                    <span style={{ fontSize: '0.85rem', width: '60px' }}>Min Km:</span>
+                    <input type="number" className="glass-input" value={tier.min} onChange={(e) => handleTierChange(idx, 'min', e.target.value)} style={{ width: '80px', padding: '8px', borderRadius: '6px' }} />
+                    <span style={{ fontSize: '0.85rem', width: '60px', marginLeft: '12px' }}>Max Km:</span>
+                    <input type="number" className="glass-input" value={tier.max} onChange={(e) => handleTierChange(idx, 'max', e.target.value)} style={{ width: '80px', padding: '8px', borderRadius: '6px' }} />
+                    <span style={{ fontSize: '0.85rem', width: '50px', marginLeft: '12px' }}>Price:</span>
+                    <input type="number" className="glass-input" value={tier.price} onChange={(e) => handleTierChange(idx, 'price', e.target.value)} style={{ width: '100px', padding: '8px', borderRadius: '6px' }} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '16px', background: 'rgba(157, 78, 221, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(157, 78, 221, 0.2)' }}>
+                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-primary)' }}>Overage Price (&gt; 15km):</span>
+                <input type="number" className="glass-input" value={localCheckoutConfig.overagePrice} onChange={(e) => setLocalCheckoutConfig({...localCheckoutConfig, overagePrice: Number(e.target.value)})} style={{ width: '120px', padding: '10px', borderRadius: '6px' }} />
               </div>
             </div>
 
