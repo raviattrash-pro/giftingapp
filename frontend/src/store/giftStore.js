@@ -92,6 +92,65 @@ const safeSaveCatalogCache = (catalogData) => {
   }
 };
 
+const SEED_CATALOG = [
+  {
+    id: 101,
+    name: "Luxury Wellness Spa Hamper",
+    description: "Indulgent self-care essential hamper featuring scented candles, essential oils, and organic bath salts.",
+    category: "Self Care",
+    subcategory: "Wellness",
+    price: 1599,
+    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600",
+    imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600",
+    rating: 4.8,
+    reviewCount: 42,
+    stock: 15,
+    emotionTags: "Relaxation,Wellness,Luxury"
+  },
+  {
+    id: 102,
+    name: "Artisanal Chocolate & Truffle Collection",
+    description: "Handcrafted dark and milk chocolate truffles wrapped in premium velvet keepsake box.",
+    category: "Chocolates",
+    subcategory: "Gourmet",
+    price: 899,
+    image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&q=80&w=600",
+    imageUrl: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&q=80&w=600",
+    rating: 4.9,
+    reviewCount: 88,
+    stock: 25,
+    emotionTags: "Celebration,Sweet,Gourmet"
+  },
+  {
+    id: 103,
+    name: "Corporate Executive Desk Organizer",
+    description: "Sleek vegan leather desk organizer with wireless charging pad and custom brass pen.",
+    category: "Corporate",
+    subcategory: "Office",
+    price: 2499,
+    image: "https://images.unsplash.com/photo-1585336261026-875a60a1c92f?auto=format&fit=crop&q=80&w=600",
+    imageUrl: "https://images.unsplash.com/photo-1585336261026-875a60a1c92f?auto=format&fit=crop&q=80&w=600",
+    rating: 4.7,
+    reviewCount: 31,
+    stock: 10,
+    emotionTags: "Professional,Executive,Utility"
+  },
+  {
+    id: 104,
+    name: "Royal Celebration Dry Fruit & Nut Hamper",
+    description: "Premium roasted almonds, cashews, pistachios, and stuffed dates in handcrafted brass jars.",
+    category: "Festive",
+    subcategory: "Hampers",
+    price: 1999,
+    image: "https://images.unsplash.com/photo-1608755728617-aefab37d155b?auto=format&fit=crop&q=80&w=600",
+    imageUrl: "https://images.unsplash.com/photo-1608755728617-aefab37d155b?auto=format&fit=crop&q=80&w=600",
+    rating: 4.9,
+    reviewCount: 64,
+    stock: 20,
+    emotionTags: "Festive,Healthy,Traditional"
+  }
+];
+
 export const useGiftStore = create((set, get) => ({
   catalog: [],
   currentGift: null,
@@ -151,76 +210,74 @@ export const useGiftStore = create((set, get) => ({
   },
 
   fetchCatalog: async () => {
+    // 1. Instantly check localStorage cache
     const cachedData = localStorage.getItem('catalog_cache');
-    let hasCache = false;
+    let loadedCatalog = null;
 
     if (cachedData) {
       try {
         const parsed = JSON.parse(cachedData);
         if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
-          hasCache = true;
+          loadedCatalog = parsed.map(normalizeGift);
         }
       } catch (e) {}
     }
 
-    if (!hasCache) {
-      // Keep existing catalog or show fast UI state instead of blocking 30-40 seconds
-      set({ isLoading: get().catalog.length === 0, error: null });
+    // 2. If no cache yet, instantly load SEED_CATALOG (0ms lag for user!)
+    if (!loadedCatalog || loadedCatalog.length === 0) {
+      loadedCatalog = (get().catalog.length > 0 ? get().catalog : SEED_CATALOG).map(normalizeGift);
     }
 
+    set({ catalog: loadedCatalog, isLoading: false, error: null });
+
+    // 3. Background fetch from server to update catalog seamlessly
     try {
-      const response = await api.get('/gifts', { timeout: 10000 });
+      const response = await api.get('/gifts');
       const freshData = response.data || [];
       if (freshData.length > 0) {
         const normalized = freshData.map(normalizeGift);
         set({ catalog: normalized, isLoading: false, error: null });
         safeSaveCatalogCache(freshData);
-      } else if (!hasCache) {
-        set({ catalog: [], isLoading: false, error: null });
       }
     } catch (err) {
-      console.warn('API call failed or timed out fetching catalog:', err);
-      // Seamless fallback to cached data or local state
+      console.warn('Backend API warming up or unreachable, using local catalog state:', err);
       set({ isLoading: false });
-      if (!hasCache && get().catalog.length === 0) {
-        set({ error: null }); // Render cleanly without breaking UI
-      }
     }
   },
 
   fetchGiftById: async (id) => {
-    const cachedCatalog = localStorage.getItem('catalog_cache');
-    let fallbackGift = null;
-    if (cachedCatalog) {
-      try {
-        const catalog = JSON.parse(cachedCatalog);
-        fallbackGift = catalog.find(g => g.id === parseInt(id) || g.id === id);
-      } catch (e) {}
-    }
-    if (!fallbackGift) {
-      const individualCache = localStorage.getItem(`gift_cache_${id}`);
-      if (individualCache) {
-        try { fallbackGift = JSON.parse(individualCache); } catch (e) {}
+    let found = get().catalog.find(g => String(g.id) === String(id));
+
+    if (!found) {
+      const cachedCatalog = localStorage.getItem('catalog_cache');
+      if (cachedCatalog) {
+        try {
+          const catalog = JSON.parse(cachedCatalog);
+          found = catalog.find(g => String(g.id) === String(id));
+        } catch (e) {}
       }
     }
 
-    if (fallbackGift) {
-      set({ currentGift: normalizeGift(fallbackGift), isLoading: false, error: null });
+    if (!found) {
+      found = SEED_CATALOG.find(g => String(g.id) === String(id));
+    }
+
+    if (found) {
+      set({ currentGift: normalizeGift(found), isLoading: false, error: null });
     } else {
       set({ isLoading: true, error: null });
     }
 
     try {
       const response = await api.get(`/gifts/${id}`);
-      const freshGift = normalizeGift(response.data);
-      set({ currentGift: freshGift, isLoading: false, error: null });
-      try { localStorage.setItem(`gift_cache_${id}`, JSON.stringify(freshGift)); } catch(e){}
-    } catch (err) {
-      console.error(`API call failed for gift ${id}:`, err);
-      if (!fallbackGift) {
-        set({ currentGift: null, isLoading: false, error: 'Gift not found.' });
+      if (response.data) {
+        const freshGift = normalizeGift(response.data);
+        set({ currentGift: freshGift, isLoading: false, error: null });
+        try { localStorage.setItem(`gift_cache_${id}`, JSON.stringify(freshGift)); } catch(e){}
       }
+    } catch (err) {
+      console.warn(`Backend fetch for gift ${id} pending/failed, using local fallback:`, err);
+      set({ isLoading: false });
     }
   },
 
