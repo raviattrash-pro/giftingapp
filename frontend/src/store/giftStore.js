@@ -69,6 +69,29 @@ const toGiftPayload = (product) => {
 
 
 
+const safeSaveCatalogCache = (catalogData) => {
+  if (!catalogData || !Array.isArray(catalogData)) return;
+  try {
+    localStorage.setItem('catalog_cache', JSON.stringify(catalogData));
+  } catch (quotaErr) {
+    console.warn('Quota exceeded saving catalog to localStorage. Optimizing base64 images...', quotaErr);
+    try {
+      const optimized = catalogData.map(item => {
+        const isHeavyImg = typeof item.imageUrl === 'string' && item.imageUrl.length > 50000;
+        return {
+          ...item,
+          imageUrl: isHeavyImg ? (item.image && item.image.length < 50000 ? item.image : FALLBACK_GIFT_IMAGE) : item.imageUrl,
+          image: isHeavyImg ? FALLBACK_GIFT_IMAGE : item.image,
+          additionalImages: []
+        };
+      });
+      localStorage.setItem('catalog_cache', JSON.stringify(optimized));
+    } catch (e) {
+      console.error('Failed to save optimized catalog cache:', e);
+    }
+  }
+};
+
 export const useGiftStore = create((set, get) => ({
   catalog: [],
   currentGift: null,
@@ -85,7 +108,7 @@ export const useGiftStore = create((set, get) => ({
       const newProduct = normalizeGift(response.data);
       set((state) => {
         const newCatalog = [newProduct, ...state.catalog];
-        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        safeSaveCatalogCache(newCatalog);
         return { catalog: newCatalog, isLoading: false };
       });
       return newProduct;
@@ -102,7 +125,7 @@ export const useGiftStore = create((set, get) => ({
       const updated = normalizeGift(response.data);
       set((state) => {
         const newCatalog = state.catalog.map((g) => g.id === product.id ? updated : g);
-        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        safeSaveCatalogCache(newCatalog);
         return { catalog: newCatalog, isLoading: false };
       });
       return updated;
@@ -118,7 +141,7 @@ export const useGiftStore = create((set, get) => ({
       await api.delete(`/admin/gifts/${id}`);
       set((state) => {
         const newCatalog = state.catalog.filter((g) => g.id !== id);
-        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        safeSaveCatalogCache(newCatalog);
         return { catalog: newCatalog, isLoading: false };
       });
     } catch (err) {
@@ -129,28 +152,39 @@ export const useGiftStore = create((set, get) => ({
 
   fetchCatalog: async () => {
     const cachedData = localStorage.getItem('catalog_cache');
+    let hasCache = false;
+
     if (cachedData) {
       try {
         const parsed = JSON.parse(cachedData);
-        set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
+          hasCache = true;
+        }
       } catch (e) {}
-    } else {
-      set({ catalog: [], isLoading: true, error: null });
+    }
+
+    if (!hasCache) {
+      // Keep existing catalog or show fast UI state instead of blocking 30-40 seconds
+      set({ isLoading: get().catalog.length === 0, error: null });
     }
 
     try {
-      const response = await api.get('/gifts');
+      const response = await api.get('/gifts', { timeout: 10000 });
       const freshData = response.data || [];
-      set({ catalog: freshData.map(normalizeGift), isLoading: false, error: null });
-      try {
-        localStorage.setItem('catalog_cache', JSON.stringify(freshData));
-      } catch (e) {
-        // Ignore QuotaExceededError if images are too large for localStorage (5MB limit)
+      if (freshData.length > 0) {
+        const normalized = freshData.map(normalizeGift);
+        set({ catalog: normalized, isLoading: false, error: null });
+        safeSaveCatalogCache(freshData);
+      } else if (!hasCache) {
+        set({ catalog: [], isLoading: false, error: null });
       }
     } catch (err) {
-      console.error('API call failed fetching catalog:', err);
-      if (!cachedData) {
-        set({ catalog: [], isLoading: false, error: 'Failed to retrieve catalog.' });
+      console.warn('API call failed or timed out fetching catalog:', err);
+      // Seamless fallback to cached data or local state
+      set({ isLoading: false });
+      if (!hasCache && get().catalog.length === 0) {
+        set({ error: null }); // Render cleanly without breaking UI
       }
     }
   },

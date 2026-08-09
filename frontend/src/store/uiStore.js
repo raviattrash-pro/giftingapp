@@ -110,6 +110,10 @@ export const useUiStore = create((set, get) => ({
   },
 
   fetchNavCategories: async () => {
+    const cached = localStorage.getItem('nav_categories');
+    if (cached) {
+      try { set({ navCategories: JSON.parse(cached) }); } catch (e) {}
+    }
     try {
       const response = await api.get('/config/NAV_CATEGORIES');
       if (response.data && response.data.value) {
@@ -193,6 +197,13 @@ export const useUiStore = create((set, get) => ({
   },
 
   fetchGlobalFeatures: async () => {
+    const cached = localStorage.getItem('global_features');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        set({ globalFeatures: { ...defaultGlobalFeatures, ...parsed } });
+      } catch (e) {}
+    }
     try {
       const response = await api.get('/config/GLOBAL_FEATURES');
       if (response.data && response.data.value) {
