@@ -62,6 +62,7 @@ const GiftCheckoutPage = () => {
   const [paymentScreenshot, setPaymentScreenshot] = useState('');
   const [screenshotName, setScreenshotName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('RAZORPAY'); // 'RAZORPAY' or 'MANUAL_QR'
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   // Coupon
   const [couponCodeInput, setCouponCodeInput] = useState('');
@@ -314,7 +315,7 @@ const GiftCheckoutPage = () => {
 
   const handleManualCheckout = async (e) => {
     if (e) e.preventDefault();
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isPlacingOrder) return;
 
     if (!recipientName.trim()) {
       addToast('Please provide the recipient\'s name.', 'error');
@@ -331,6 +332,7 @@ const GiftCheckoutPage = () => {
       return;
     }
 
+    setIsPlacingOrder(true);
     try {
       const orderData = {
         items: cart,
@@ -345,6 +347,9 @@ const GiftCheckoutPage = () => {
         paymentScreenshot
       };
       const res = await checkout(orderData);
+      if (res?.duplicateBlocked) {
+        return;
+      }
       
       // --- Optimistic UI Update for My Orders ---
       try {
@@ -385,6 +390,7 @@ const GiftCheckoutPage = () => {
          navigate('/orders');
       }
     } catch (err) {
+      setIsPlacingOrder(false);
       addToast(err.message || 'Failed to place order. Please try again.', 'error');
     }
   };
@@ -1340,10 +1346,11 @@ const GiftCheckoutPage = () => {
                     <Button 
                       onClick={handleManualCheckout} 
                       variant="primary" 
+                      loading={isPlacingOrder}
                       style={{ width: '100%', marginTop: '8px', background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
-                      disabled={!recipientName || !address || !transactionId || !paymentScreenshot}
+                      disabled={isPlacingOrder || !recipientName || !address || !transactionId || !paymentScreenshot}
                     >
-                      Confirm Order & Upload Receipt
+                      {isPlacingOrder ? 'Processing Order...' : 'Confirm Order & Upload Receipt'}
                     </Button>
                   </div>
                 )}

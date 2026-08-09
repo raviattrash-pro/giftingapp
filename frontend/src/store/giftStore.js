@@ -425,7 +425,11 @@ export const useGiftStore = create((set, get) => ({
   },
 
   checkout: async (checkoutDetails) => {
-    set({ isLoading: true });
+    if (get().isSubmittingCheckout) {
+      console.warn('Checkout already in progress, blocking duplicate call.');
+      return { duplicateBlocked: true };
+    }
+    set({ isLoading: true, isSubmittingCheckout: true });
     const payload = {
       items: get().cart,
       ...checkoutDetails
@@ -433,7 +437,7 @@ export const useGiftStore = create((set, get) => ({
 
     try {
       const response = await api.post('/orders', payload);
-      set({ cart: [], isLoading: false });
+      set({ cart: [], isLoading: false, isSubmittingCheckout: false });
       return response.data;
     } catch (err) {
       console.warn('API checkout failed, attempting offline save...', err);
@@ -452,15 +456,15 @@ export const useGiftStore = create((set, get) => ({
           localStorage.setItem('pending_sync_orders', JSON.stringify(existing));
         } catch (storageErr) {
           console.error('Offline save failed due to storage quota:', storageErr);
-          set({ isLoading: false });
+          set({ isLoading: false, isSubmittingCheckout: false });
           throw new Error('Your browser storage is full. Please clear some space to save this order offline.');
         }
         
-        set({ cart: [], isLoading: false });
+        set({ cart: [], isLoading: false, isSubmittingCheckout: false });
         return { orderId: tempId, offline: true };
       }
       
-      set({ isLoading: false });
+      set({ isLoading: false, isSubmittingCheckout: false });
       throw err;
     }
   }
