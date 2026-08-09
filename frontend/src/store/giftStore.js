@@ -92,65 +92,6 @@ const safeSaveCatalogCache = (catalogData) => {
   }
 };
 
-const SEED_CATALOG = [
-  {
-    id: 101,
-    name: "Luxury Wellness Spa Hamper",
-    description: "Indulgent self-care essential hamper featuring scented candles, essential oils, and organic bath salts.",
-    category: "Self Care",
-    subcategory: "Wellness",
-    price: 1599,
-    image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600",
-    imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600",
-    rating: 4.8,
-    reviewCount: 42,
-    stock: 15,
-    emotionTags: "Relaxation,Wellness,Luxury"
-  },
-  {
-    id: 102,
-    name: "Artisanal Chocolate & Truffle Collection",
-    description: "Handcrafted dark and milk chocolate truffles wrapped in premium velvet keepsake box.",
-    category: "Chocolates",
-    subcategory: "Gourmet",
-    price: 899,
-    image: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&q=80&w=600",
-    imageUrl: "https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&q=80&w=600",
-    rating: 4.9,
-    reviewCount: 88,
-    stock: 25,
-    emotionTags: "Celebration,Sweet,Gourmet"
-  },
-  {
-    id: 103,
-    name: "Corporate Executive Desk Organizer",
-    description: "Sleek vegan leather desk organizer with wireless charging pad and custom brass pen.",
-    category: "Corporate",
-    subcategory: "Office",
-    price: 2499,
-    image: "https://images.unsplash.com/photo-1585336261026-875a60a1c92f?auto=format&fit=crop&q=80&w=600",
-    imageUrl: "https://images.unsplash.com/photo-1585336261026-875a60a1c92f?auto=format&fit=crop&q=80&w=600",
-    rating: 4.7,
-    reviewCount: 31,
-    stock: 10,
-    emotionTags: "Professional,Executive,Utility"
-  },
-  {
-    id: 104,
-    name: "Royal Celebration Dry Fruit & Nut Hamper",
-    description: "Premium roasted almonds, cashews, pistachios, and stuffed dates in handcrafted brass jars.",
-    category: "Festive",
-    subcategory: "Hampers",
-    price: 1999,
-    image: "https://images.unsplash.com/photo-1608755728617-aefab37d155b?auto=format&fit=crop&q=80&w=600",
-    imageUrl: "https://images.unsplash.com/photo-1608755728617-aefab37d155b?auto=format&fit=crop&q=80&w=600",
-    rating: 4.9,
-    reviewCount: 64,
-    stock: 20,
-    emotionTags: "Festive,Healthy,Traditional"
-  }
-];
-
 export const useGiftStore = create((set, get) => ({
   catalog: [],
   currentGift: null,
@@ -210,38 +151,37 @@ export const useGiftStore = create((set, get) => ({
   },
 
   fetchCatalog: async () => {
-    // 1. Instantly check localStorage cache
+    // 1. Instantly check localStorage cache for real admin products
     const cachedData = localStorage.getItem('catalog_cache');
-    let loadedCatalog = null;
+    let hasCache = false;
 
     if (cachedData) {
       try {
         const parsed = JSON.parse(cachedData);
         if (parsed && Array.isArray(parsed) && parsed.length > 0) {
-          loadedCatalog = parsed.map(normalizeGift);
+          set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
+          hasCache = true;
         }
       } catch (e) {}
     }
 
-    // 2. If no cache yet, instantly load SEED_CATALOG (0ms lag for user!)
-    if (!loadedCatalog || loadedCatalog.length === 0) {
-      loadedCatalog = (get().catalog.length > 0 ? get().catalog : SEED_CATALOG).map(normalizeGift);
+    if (!hasCache) {
+      set({ isLoading: get().catalog.length === 0, error: null });
     }
 
-    set({ catalog: loadedCatalog, isLoading: false, error: null });
-
-    // 3. Background fetch from server to update catalog seamlessly
+    // 2. Fetch fresh original products from database
     try {
       const response = await api.get('/gifts');
       const freshData = response.data || [];
-      if (freshData.length > 0) {
-        const normalized = freshData.map(normalizeGift);
-        set({ catalog: normalized, isLoading: false, error: null });
-        safeSaveCatalogCache(freshData);
-      }
+      const normalized = freshData.map(normalizeGift);
+      set({ catalog: normalized, isLoading: false, error: null });
+      safeSaveCatalogCache(freshData);
     } catch (err) {
-      console.warn('Backend API warming up or unreachable, using local catalog state:', err);
+      console.warn('Backend API warming up or unreachable:', err);
       set({ isLoading: false });
+      if (!hasCache && get().catalog.length === 0) {
+        set({ catalog: [] });
+      }
     }
   },
 
@@ -258,10 +198,6 @@ export const useGiftStore = create((set, get) => ({
       }
     }
 
-    if (!found) {
-      found = SEED_CATALOG.find(g => String(g.id) === String(id));
-    }
-
     if (found) {
       set({ currentGift: normalizeGift(found), isLoading: false, error: null });
     } else {
@@ -276,7 +212,7 @@ export const useGiftStore = create((set, get) => ({
         try { localStorage.setItem(`gift_cache_${id}`, JSON.stringify(freshGift)); } catch(e){}
       }
     } catch (err) {
-      console.warn(`Backend fetch for gift ${id} pending/failed, using local fallback:`, err);
+      console.warn(`Backend fetch for gift ${id} pending/failed:`, err);
       set({ isLoading: false });
     }
   },
