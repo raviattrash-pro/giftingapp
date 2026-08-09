@@ -484,7 +484,7 @@ public class GiftOrder {
         }
 
         public GiftOrder build() {
-            return new GiftOrder(id, user, recipient, occasion, giftName, giftDescription, amount, quantity, status, scheduledDate, scheduledTime, personalMessage, isAnonymous, deliveryType, deliveryService, deliveryCharge, adminDeliveryCharge, trackingId, transactionId, paymentScreenshot, deliveryAddress, createdAt);
+            return new GiftOrder(id, user, recipient, occasion, giftName, giftDescription, amount, quantity, status, scheduledDate, scheduledTime, personalMessage, isAnonymous, deliveryType, deliveryService, deliveryCharge, adminDeliveryCharge, wrappingCharge, tax, trackingId, transactionId, paymentScreenshot, deliveryAddress, createdAt);
         }
     }
 }

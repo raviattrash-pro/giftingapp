@@ -166,6 +166,8 @@ public class CheckoutRequest {
         private String deliveryService;
         private BigDecimal deliveryCharge;
         private BigDecimal adminDeliveryCharge;
+        private BigDecimal wrappingCharge;
+        private BigDecimal tax;
 
         CheckoutRequestBuilder() {}
 
@@ -187,9 +189,11 @@ public class CheckoutRequest {
         public CheckoutRequestBuilder deliveryService(String deliveryService) { this.deliveryService = deliveryService; return this; }
         public CheckoutRequestBuilder deliveryCharge(BigDecimal deliveryCharge) { this.deliveryCharge = deliveryCharge; return this; }
         public CheckoutRequestBuilder adminDeliveryCharge(BigDecimal adminDeliveryCharge) { this.adminDeliveryCharge = adminDeliveryCharge; return this; }
+        public CheckoutRequestBuilder wrappingCharge(BigDecimal wrappingCharge) { this.wrappingCharge = wrappingCharge; return this; }
+        public CheckoutRequestBuilder tax(BigDecimal tax) { this.tax = tax; return this; }
 
         public CheckoutRequest build() {
-            return new CheckoutRequest(items, address, city, state, pincode, courierType, grandTotal, transactionId, paymentScreenshot, recipientName, recipientPhone, recipientEmail, personalMessage, scheduledDate, scheduledTime, deliveryService, deliveryCharge, adminDeliveryCharge);
+            return new CheckoutRequest(items, address, city, state, pincode, courierType, grandTotal, transactionId, paymentScreenshot, recipientName, recipientPhone, recipientEmail, personalMessage, scheduledDate, scheduledTime, deliveryService, deliveryCharge, adminDeliveryCharge, wrappingCharge, tax);
         }
     }
 }
