@@ -18,6 +18,8 @@ public class OrderResponse {
     private LocalTime scheduledTime;
     private String deliveryService;
     private BigDecimal deliveryCharge;
+    private BigDecimal wrappingCharge;
+    private BigDecimal tax;
     private String personalMessage;
     private Boolean isAnonymous;
     private String deliveryType;
@@ -115,17 +117,16 @@ public class OrderResponse {
         this.deliveryService = deliveryService;
     }
 
-    public BigDecimal getDeliveryCharge() {
-        return deliveryCharge;
-    }
+    public BigDecimal getDeliveryCharge() { return deliveryCharge; }
+    public void setDeliveryCharge(BigDecimal deliveryCharge) { this.deliveryCharge = deliveryCharge; }
 
-    public void setDeliveryCharge(BigDecimal deliveryCharge) {
-        this.deliveryCharge = deliveryCharge;
-    }
+    public BigDecimal getWrappingCharge() { return wrappingCharge; }
+    public void setWrappingCharge(BigDecimal wrappingCharge) { this.wrappingCharge = wrappingCharge; }
 
-    public String getPersonalMessage() {
-        return personalMessage;
-    }
+    public BigDecimal getTax() { return tax; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
+
+    public String getPersonalMessage() { return personalMessage; }
 
     public void setPersonalMessage(String personalMessage) {
         this.personalMessage = personalMessage;

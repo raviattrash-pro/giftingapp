@@ -58,7 +58,14 @@ const AdminOrdersPage = () => {
       } catch (e) {}
 
       setOrders(fetchedOrders);
-      localStorage.setItem('admin_orders_cache', JSON.stringify(fetchedOrders));
+      
+      // Strip out huge base64 image strings before caching to avoid QuotaExceededError
+      const cacheSafeOrders = fetchedOrders.map(({ paymentScreenshot, ...rest }) => rest);
+      try {
+        localStorage.setItem('admin_orders_cache', JSON.stringify(cacheSafeOrders));
+      } catch (cacheErr) {
+        console.warn('Failed to cache orders to localStorage', cacheErr);
+      }
     } catch (err) {
       console.error(err);
       if (!cached) addToast('Failed to fetch orders list.', 'error');
@@ -72,52 +79,119 @@ const AdminOrdersPage = () => {
     fetchConfigs();
   }, []);
 
+  // Offline synchronization queue
+  const syncOfflineActions = async () => {
+    const queue = JSON.parse(localStorage.getItem('admin_offline_queue') || '[]');
+    if (queue.length === 0) return;
+    let successCount = 0;
+    
+    for (const action of queue) {
+      try {
+        if (action.type === 'CONFIRM') await api.post(`/admin/orders/${action.id}/confirm`);
+        if (action.type === 'REJECT') await api.post(`/admin/orders/${action.id}/reject`);
+        if (action.type === 'STATUS') await api.post(`/admin/orders/${action.id}/status`, { status: action.status });
+        successCount++;
+      } catch (err) {
+        if (err.response) {
+          // Backend responded with an error, remove from queue to avoid infinite failing loops
+          successCount++;
+        }
+      }
+    }
+    
+    if (successCount === queue.length) {
+      localStorage.removeItem('admin_offline_queue');
+      addToast('Offline actions synced successfully!', 'success');
+      fetchOrders();
+    } else if (successCount > 0) {
+      localStorage.setItem('admin_offline_queue', JSON.stringify(queue.slice(successCount)));
+      fetchOrders();
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('online', syncOfflineActions);
+    if (navigator.onLine) syncOfflineActions();
+    return () => window.removeEventListener('online', syncOfflineActions);
+  }, []);
+
+  const queueOfflineAction = (action) => {
+    const queue = JSON.parse(localStorage.getItem('admin_offline_queue') || '[]');
+    queue.push(action);
+    localStorage.setItem('admin_offline_queue', JSON.stringify(queue));
+    addToast('You are offline. Action saved locally and will sync automatically.', 'info');
+  };
+
   const handleConfirm = async () => {
     if (!orderToConfirm) return;
-    try {
-      await api.post(`/admin/orders/${orderToConfirm.id}/confirm`);
-      addToast('Order confirmed and dispatch scheduled successfully.', 'success');
-      
-      // Auto redirect to Porter/Rapido web interface
-      if (orderToConfirm.deliveryType === 'Instant') {
-        const service = orderToConfirm.deliveryService === 'PORTER' ? 'porter' : 'rapido';
-        const origin = encodeURIComponent(storeAddress !== 'Not Set' ? storeAddress : '100 Main St, Mumbai, 400001');
-        const destination = encodeURIComponent(orderToConfirm.deliveryAddress || '');
-        const schedule = encodeURIComponent(orderToConfirm.scheduledTime || '');
-        
-        let bookingUrl = '';
-        if (service === 'porter') {
-           bookingUrl = `https://porter.in/book?origin=${origin}&destination=${destination}&date=${schedule}`;
-        } else {
-           bookingUrl = `https://rapido.bike/book?pickup=${origin}&drop=${destination}&date=${schedule}`;
-        }
-        window.open(bookingUrl, '_blank');
-      }
+    const targetId = orderToConfirm.id;
+    const deliveryType = orderToConfirm.deliveryType;
+    const deliveryService = orderToConfirm.deliveryService;
+    const deliveryAddress = orderToConfirm.deliveryAddress;
+    const scheduledTime = orderToConfirm.scheduledTime;
+    
+    // Optimistic Update
+    setOrders(prev => prev.map(o => o.id === targetId ? { ...o, status: 'CONFIRMED' } : o));
+    setOrderToConfirm(null);
 
-      setOrderToConfirm(null);
-      fetchOrders();
+    try {
+      await api.post(`/admin/orders/${targetId}/confirm`);
+      addToast('Order confirmed and dispatch scheduled successfully.', 'success');
     } catch (err) {
-      addToast(err.response?.data?.message || 'Failed to confirm order.', 'error');
+      if (!err.response) {
+        queueOfflineAction({ type: 'CONFIRM', id: targetId });
+      } else {
+        addToast(err.response?.data?.message || 'Failed to confirm order.', 'error');
+        fetchOrders(); // Revert on failure
+      }
+    }
+      
+    // Auto redirect to Porter/Rapido web interface
+    if (deliveryType === 'Instant') {
+      const service = deliveryService === 'PORTER' ? 'porter' : 'rapido';
+      const origin = encodeURIComponent(storeAddress !== 'Not Set' ? storeAddress : '100 Main St, Mumbai, 400001');
+      const destination = encodeURIComponent(deliveryAddress || '');
+      const schedule = encodeURIComponent(scheduledTime || '');
+      
+      let bookingUrl = '';
+      if (service === 'porter') {
+         bookingUrl = `https://porter.in/book?origin=${origin}&destination=${destination}&date=${schedule}`;
+      } else {
+         bookingUrl = `https://rapido.bike/book?pickup=${origin}&drop=${destination}&date=${schedule}`;
+      }
+      window.open(bookingUrl, '_blank');
     }
   };
 
   const handleReject = async (orderId) => {
+    // Optimistic Update
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'REJECTED' } : o));
     try {
       await api.post(`/admin/orders/${orderId}/reject`);
       addToast('Order has been rejected and cancelled.', 'warning');
-      fetchOrders();
     } catch (err) {
-      addToast(err.response?.data?.message || 'Failed to reject order.', 'error');
+      if (!err.response) {
+        queueOfflineAction({ type: 'REJECT', id: orderId });
+      } else {
+        addToast(err.response?.data?.message || 'Failed to reject order.', 'error');
+        fetchOrders();
+      }
     }
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
+    // Optimistic Update
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     try {
       await api.post(`/admin/orders/${orderId}/status`, { status: newStatus });
       addToast(`Order status updated to ${newStatus.replace(/_/g, ' ')}`, 'success');
-      fetchOrders();
     } catch (err) {
-      addToast(err.response?.data?.message || 'Failed to update status.', 'error');
+      if (!err.response) {
+        queueOfflineAction({ type: 'STATUS', id: orderId, status: newStatus });
+      } else {
+        addToast(err.response?.data?.message || 'Failed to update status.', 'error');
+        fetchOrders();
+      }
     }
   };
 
@@ -393,7 +467,7 @@ const AdminOrdersPage = () => {
                 {/* Screenshot Thumb */}
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Receipt</span>
-                  {order.paymentScreenshot === 'razorpay_verified_payment' ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <Button 
                       size="sm" 
                       variant="outline" 
@@ -402,48 +476,47 @@ const AdminOrdersPage = () => {
                     >
                       View Bill
                     </Button>
-                  ) : order.paymentScreenshot ? (
-                    <div 
-                      onClick={() => openScreenshotModal(order.paymentScreenshot, order.id)}
-                      style={{
-                        position: 'relative',
-                        width: '64px',
-                        height: '40px',
-                        borderRadius: 'var(--radius-sm)',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        border: '1px solid var(--glass-border)',
-                        background: 'rgba(0,0,0,0.2)'
-                      }}
-                      className="glass-card-hover"
-                    >
-                      <img 
-                        src={order.paymentScreenshot} 
-                        alt="Receipt thumbnail" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0,
-                        transition: 'opacity 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = 0}
+                    {order.paymentScreenshot && order.paymentScreenshot !== 'razorpay_verified_payment' && (
+                      <div 
+                        onClick={() => openScreenshotModal(order.paymentScreenshot, order.id)}
+                        style={{
+                          position: 'relative',
+                          width: '40px',
+                          height: '32px',
+                          borderRadius: 'var(--radius-sm)',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: '1px solid var(--glass-border)',
+                          background: 'rgba(0,0,0,0.2)'
+                        }}
+                        className="glass-card-hover"
                       >
-                        <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 600 }}>View</span>
+                        <img 
+                          src={order.paymentScreenshot} 
+                          alt="Receipt thumbnail" 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'rgba(0,0,0,0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = 0}
+                        >
+                          <span style={{ color: '#fff', fontSize: '0.5rem', fontWeight: 600 }}>View</span>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No receipt</span>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Status or Actions */}
@@ -704,9 +777,15 @@ const AdminOrdersPage = () => {
                         <span style={{ color: '#333' }}>₹{billOrder.wrappingCharge}</span>
                      </div>
                    )}
+                   {billOrder.tax > 0 && (
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#666' }}>Luxury Tax:</span>
+                        <span style={{ color: '#333' }}>₹{billOrder.tax}</span>
+                     </div>
+                   )}
                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #eaeaea', color: '#000' }}>
                       <span>Grand Total:</span>
-                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0)}</span>
+                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0) + (billOrder.tax || 0)}</span>
                    </div>
                 </div>
              </div>

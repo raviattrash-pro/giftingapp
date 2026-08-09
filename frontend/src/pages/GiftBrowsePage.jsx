@@ -197,26 +197,27 @@ const GiftBrowsePage = () => {
     setSelectedSubcategory('All');
   };
 
+  const { globalFeatures } = useUiStore();
+  
   const isEnabled = (flagKey) => {
-    const flags = user?.featureFlags || user?.toggles || {};
-    return flags[flagKey] === true;
+    return globalFeatures[flagKey] === true;
   };
 
   // Feature cards data
   const featureCards = [
-    { title: 'AI Gift Advisor', desc: 'Get personalized gift suggestions powered by AI', icon: MessageSquareText, path: '/giftgpt', color: '#8b5cf6', show: !user || isEnabled('aiAssistant') },
-    { title: 'Gift Finder Quiz', desc: 'Answer questions to find the perfect gift', icon: Sparkles, path: '/quiz', color: '#f59e0b', show: !user || isEnabled('aiAssistant') },
-    { title: 'AI Gift Detective', desc: 'Analyze social profiles for gift insights', icon: SearchCode, path: '/detective', color: '#06b6d4', show: !user || isEnabled('aiAssistant') },
-    { title: 'Emotion Search', desc: 'Find gifts by the emotions they evoke', icon: HeartHandshake, path: '/emotions', color: '#ec4899', show: !user || isEnabled('aiAssistant') },
-    { title: 'Metrics Dashboard', desc: 'Track your gifting stats and performance', icon: LayoutDashboard, path: '/dashboard', color: '#3b82f6', show: !user || isEnabled('dashboard') },
-    { title: 'Occasion Calendar', desc: 'Never miss a birthday or anniversary', icon: Calendar, path: '/calendar', color: '#10b981', show: !user || isEnabled('occasionCalendar') },
-    { title: 'Budget Planner', desc: 'Plan and optimize your gifting budget', icon: BarChart3, path: '/budget', color: '#f97316', show: !user || isEnabled('budgetPlanner') },
-    { title: 'Relationship Vault', desc: 'Store gift preferences for every person', icon: User, path: '/recipients', color: '#6366f1', show: !user || isEnabled('recipientVault') },
-    { title: 'Wishlists', desc: 'Create & share collaborative wishlists', icon: Heart, path: '/wishlists', color: '#ef4444', show: !user || isEnabled('groupGifting') },
-    { title: 'Group Gifting', desc: 'Pool money together for bigger gifts', icon: UsersRound, path: '/groupgifting', color: '#14b8a6', show: !user || isEnabled('groupGifting') },
-    { title: 'Secret Santa', desc: 'Organize Secret Santa events easily', icon: Gamepad2, path: '/secretsanta', color: '#e11d48', show: !user || isEnabled('secretSanta') },
-    { title: 'Gift Stories', desc: 'Share and discover gifting stories', icon: PlaySquare, path: '/stories', color: '#a855f7', show: !user || isEnabled('giftStories') },
-    { title: 'Future Locker', desc: 'Schedule gifts for future occasions', icon: ClipboardList, path: '/futurelocker', color: '#0ea5e9', show: true },
+    { title: 'AI Gift Advisor', desc: 'Get personalized gift suggestions powered by AI', icon: MessageSquareText, path: '/giftgpt', color: '#8b5cf6', show: isEnabled('aiAssistant') },
+    { title: 'Gift Finder Quiz', desc: 'Answer questions to find the perfect gift', icon: Sparkles, path: '/quiz', color: '#f59e0b', show: isEnabled('aiAssistant') },
+    { title: 'AI Gift Detective', desc: 'Analyze social profiles for gift insights', icon: SearchCode, path: '/detective', color: '#06b6d4', show: isEnabled('aiAssistant') },
+    { title: 'Emotion Search', desc: 'Find gifts by the emotions they evoke', icon: HeartHandshake, path: '/emotions', color: '#ec4899', show: isEnabled('aiAssistant') },
+    { title: 'Metrics Dashboard', desc: 'Track your gifting stats and performance', icon: LayoutDashboard, path: '/dashboard', color: '#3b82f6', show: isEnabled('dashboard') },
+    { title: 'Occasion Calendar', desc: 'Never miss a birthday or anniversary', icon: Calendar, path: '/calendar', color: '#10b981', show: isEnabled('occasionCalendar') },
+    { title: 'Budget Planner', desc: 'Plan and optimize your gifting budget', icon: BarChart3, path: '/budget', color: '#f97316', show: isEnabled('budgetPlanner') },
+    { title: 'Relationship Vault', desc: 'Store gift preferences for every person', icon: User, path: '/recipients', color: '#6366f1', show: isEnabled('recipientVault') },
+    { title: 'Wishlists', desc: 'Create & share collaborative wishlists', icon: Heart, path: '/wishlists', color: '#ef4444', show: isEnabled('groupGifting') },
+    { title: 'Group Gifting', desc: 'Pool money together for bigger gifts', icon: UsersRound, path: '/groupgifting', color: '#14b8a6', show: isEnabled('groupGifting') },
+    { title: 'Secret Santa', desc: 'Organize Secret Santa events easily', icon: Gamepad2, path: '/secretsanta', color: '#e11d48', show: isEnabled('secretSanta') },
+    { title: 'Gift Stories', desc: 'Share and discover gifting stories', icon: PlaySquare, path: '/stories', color: '#a855f7', show: isEnabled('giftStories') },
+    { title: 'Future Locker', desc: 'Schedule gifts for future occasions', icon: ClipboardList, path: '/futurelocker', color: '#0ea5e9', show: isEnabled('futureLocker') },
   ].filter(f => f.show);
 
   const adminCards = [
@@ -252,287 +253,291 @@ const GiftBrowsePage = () => {
         /* ==================== HOME PAGE VIEW ==================== */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
           
-          {/* Hero Carousel Banner */}
-          <div className="lh-hero-banner" style={{ padding: '20px 24px 0', position: 'relative', height: '380px', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
-            <div style={{ height: '100%', width: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden' }}>
-              {carouselSlides.map((slide, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    opacity: currentSlide === idx ? 1 : 0,
-                    transition: 'opacity 0.8s ease-in-out',
-                    zIndex: currentSlide === idx ? 1 : 0
-                  }}
-                >
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(90deg, rgba(29, 29, 29, 0.75) 0%, rgba(29, 29, 29, 0.1) 100%)',
-                    zIndex: 2
-                  }} />
-                  
-                  <img
-                    src={slide.image}
-                    alt={slide.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-
-                  <div style={{
-                    position: 'absolute',
-                    left: '60px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#ffffff',
-                    zIndex: 3,
-                    maxWidth: '500px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <span style={{ fontSize: '0.72rem', background: 'var(--brand-gold)', color: '#fff', padding: '4px 10px', borderRadius: '4px', alignSelf: 'flex-start', fontWeight: 700, letterSpacing: '1px' }}>
-                      {slide.tag}
-                    </span>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: '1.2', color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', margin: 0 }}>
-                      {slide.title}
-                    </h2>
-                    <p style={{ fontSize: '0.95rem', color: '#e2e8f0', lineHeight: '1.5', margin: 0 }}>
-                      {slide.subtitle}
-                    </p>
-                    <button
-                      onClick={() => selectQuickFilter('Traditional Gifts')}
+          {isEnabled('promotionalBanners') && (
+            <>
+              {/* Hero Carousel Banner */}
+              <div className="lh-hero-banner" style={{ padding: '20px 24px 0', position: 'relative', height: '380px', width: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
+                <div style={{ height: '100%', width: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden' }}>
+                  {carouselSlides.map((slide, idx) => (
+                    <div
+                      key={idx}
                       style={{
-                        background: 'var(--brand-rose-gold)',
-                        border: 'none',
-                        borderRadius: '30px',
-                        padding: '12px 24px',
-                        color: '#ffffff',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        width: 'fit-content',
-                        marginTop: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 12px rgba(183,110,121,0.4)',
-                        transition: 'filter 0.2s'
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: currentSlide === idx ? 1 : 0,
+                        transition: 'opacity 0.8s ease-in-out',
+                        zIndex: currentSlide === idx ? 1 : 0
                       }}
                     >
-                      Order Now <ArrowRight size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(90deg, rgba(29, 29, 29, 0.75) 0%, rgba(29, 29, 29, 0.1) 100%)',
+                        zIndex: 2
+                      }} />
+                      
+                      <img
+                        src={slide.image}
+                        alt={slide.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
 
-              {/* Carousel Arrows */}
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length)}
-                style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 4, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length)}
-                style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 4, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
-              >
-                <ChevronRight size={20} />
-              </button>
-
-              {/* Dots */}
-              <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 4 }}>
-                {carouselSlides.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentSlide(idx)}
-                    style={{
-                      width: currentSlide === idx ? '24px' : '8px',
-                      height: '8px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      background: currentSlide === idx ? 'var(--brand-rose-gold)' : 'rgba(255,255,255,0.5)',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Category Circular Links */}
-          <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-rose-gold)', margin: 0 }}>
-                Shop By Categories
-              </h2>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Fast Dispatch</span>
-            </div>
-            <div className="mobile-scroll-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '20px', justifyContent: 'space-between' }}>
-              {[
-                { name: 'Explore All', textInside: 'All', category: 'All' },
-                { name: "Father's Day", image: '/fathers_day_gift.png', category: "Father's Day" },
-                { name: 'Birthday', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80&w=200', category: 'Birthday' },
-                { name: 'Anniversary', image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=200', category: 'Anniversary' },
-                { name: 'Love N Romance', image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&q=80&w=200', category: 'Love N Romance' },
-                { name: 'Wedding', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200', category: 'Wedding' },
-                { name: 'Congratulations', image: 'https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=200', category: 'Congratulations' },
-                { name: 'Thank You', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=200', category: 'Thank You' }
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    trackEvent('CATEGORY_CLICK', '/browse', item.category, { type: 'occasion' });
-                    setActiveOccasionTab(item.category);
-                    document.getElementById('tailored-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
-                >
-                  <div 
-                    className="lh-category-circle"
-                    style={{ 
-                      width: '76px', 
-                      height: '76px', 
-                      borderRadius: '50%', 
-                      overflow: 'hidden', 
-                      border: item.textInside ? '2px solid var(--brand-rose-gold)' : '2px solid var(--glass-border)', 
-                      boxShadow: 'var(--shadow-glass)',
-                      transition: 'transform 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: item.textInside ? 'rgba(183,110,121,0.06)' : 'transparent',
-                      color: 'var(--brand-rose-gold)',
-                      fontWeight: 800,
-                      fontSize: '1.2rem'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    {item.textInside ? (
-                      item.textInside
-                    ) : (
-                      <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    )}
-                  </div>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pick Their Fav Flowers */}
-          {favFlowers.length > 0 && (
-            <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-rose-gold)', margin: 0 }}>
-                Pick Their Fav Flowers
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px' }} className="mobile-scroll-row">
-                {favFlowers.map((item, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => selectQuickFilter('Fragrance')}
-                    style={{
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    boxShadow: 'var(--shadow-glass)',
-                    border: '1px solid var(--glass-border)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    background: 'var(--bg-secondary)'
-                  }}
-                >
-                  <div style={{ height: '140px', overflow: 'hidden' }}>
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }} 
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    />
-                  </div>
-                    <div style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {item.name}
+                      <div style={{
+                        position: 'absolute',
+                        left: '60px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#ffffff',
+                        zIndex: 3,
+                        maxWidth: '500px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}>
+                        <span style={{ fontSize: '0.72rem', background: 'var(--brand-gold)', color: '#fff', padding: '4px 10px', borderRadius: '4px', alignSelf: 'flex-start', fontWeight: 700, letterSpacing: '1px' }}>
+                          {slide.tag}
+                        </span>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: '1.2', color: '#ffffff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', margin: 0 }}>
+                          {slide.title}
+                        </h2>
+                        <p style={{ fontSize: '0.95rem', color: '#e2e8f0', lineHeight: '1.5', margin: 0 }}>
+                          {slide.subtitle}
+                        </p>
+                        <button
+                          onClick={() => selectQuickFilter('Traditional Gifts')}
+                          style={{
+                            background: 'var(--brand-rose-gold)',
+                            border: 'none',
+                            borderRadius: '30px',
+                            padding: '12px 24px',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            width: 'fit-content',
+                            marginTop: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 12px rgba(183,110,121,0.4)',
+                            transition: 'filter 0.2s'
+                          }}
+                        >
+                          Order Now <ArrowRight size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  ))}
 
-          {/* Anniversary Specials Split Banner */}
-          <div style={{ padding: '32px 24px 0', display: 'grid', gridTemplateColumns: '4fr 8fr', gap: '24px' }} className="mobile-stack">
-            <div 
-              style={{
-                borderRadius: '16px',
-                overflow: 'hidden',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--glass-border)',
-                boxShadow: 'var(--shadow-glass)',
-                padding: '32px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                gap: '16px',
-                minHeight: '280px',
-                position: 'relative'
-              }}
-            >
-              <span style={{ fontSize: '0.8rem', color: '#b76e79', fontWeight: 800 }}>CELEBRATIONS MADE EXTRAORDINARY</span>
-              <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.8rem', fontWeight: 900, color: 'var(--brand-rose-gold)', lineHeight: '1.3', margin: 0 }}>
-                Birthdays Made Special
-              </h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Joyful, curated gift baskets and custom flower boxes for premium milestone gifting.
-              </p>
-              <button 
-                onClick={() => selectQuickFilter('Traditional Gifts')}
-                style={{ width: 'fit-content', border: 'none', background: 'var(--brand-rose-gold)', color: '#fff', padding: '10px 20px', borderRadius: '30px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                Explore <ChevronRight size={14} />
-              </button>
-            </div>
+                  {/* Carousel Arrows */}
+                  <button
+                    onClick={() => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length)}
+                    style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 4, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length)}
+                    style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 4, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }} className="mobile-scroll-row">
-              {[
-                { name: 'Floral Baskets', image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&q=80&w=250', cat: 'Fragrance' },
-                { name: 'Cakes & Treats', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=250', cat: 'Self Care' },
-                { name: 'Personalized Mugs', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=250', cat: 'Stationery' },
-                { name: 'Green Plants', image: 'https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=250', cat: 'Home & Living' },
-                { name: 'Premium Sets', image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=250', cat: 'Traditional Gifts' },
-                { name: 'Gift Hampers', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=250', cat: 'Self Care' },
-                { name: 'Balloon Decors', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80&w=250', cat: 'Traditional Gifts' },
-                { name: 'Best Sellers', image: '/personalized_gift.png', cat: 'All' }
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    trackEvent('CATEGORY_CLICK', '/browse', item.name, { type: 'quick_filter' });
-                    selectQuickFilter(item.cat);
-                  }}
-                  style={{
-                    flexShrink: 0,
-                    minWidth: '110px',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    boxShadow: 'var(--shadow-glass)',
-                    border: '1px solid var(--glass-border)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    background: 'var(--bg-secondary)'
-                  }}
-                >
-                  <div style={{ height: '100px', overflow: 'hidden' }}>
-                    <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{ padding: '8px 2px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {item.name}
+                  {/* Dots */}
+                  <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 4 }}>
+                    {carouselSlides.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentSlide(idx)}
+                        style={{
+                          width: currentSlide === idx ? '24px' : '8px',
+                          height: '8px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: currentSlide === idx ? 'var(--brand-rose-gold)' : 'rgba(255,255,255,0.5)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+
+              {/* Quick Category Circular Links */}
+              <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-rose-gold)', margin: 0 }}>
+                    Shop By Categories
+                  </h2>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Fast Dispatch</span>
+                </div>
+                <div className="mobile-scroll-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '20px', justifyContent: 'space-between' }}>
+                  {[
+                    { name: 'Explore All', textInside: 'All', category: 'All' },
+                    { name: "Father's Day", image: '/fathers_day_gift.png', category: "Father's Day" },
+                    { name: 'Birthday', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80&w=200', category: 'Birthday' },
+                    { name: 'Anniversary', image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=200', category: 'Anniversary' },
+                    { name: 'Love N Romance', image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&q=80&w=200', category: 'Love N Romance' },
+                    { name: 'Wedding', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200', category: 'Wedding' },
+                    { name: 'Congratulations', image: 'https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=200', category: 'Congratulations' },
+                    { name: 'Thank You', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=200', category: 'Thank You' }
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        trackEvent('CATEGORY_CLICK', '/browse', item.category, { type: 'occasion' });
+                        setActiveOccasionTab(item.category);
+                        document.getElementById('tailored-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
+                    >
+                      <div 
+                        className="lh-category-circle"
+                        style={{ 
+                          width: '76px', 
+                          height: '76px', 
+                          borderRadius: '50%', 
+                          overflow: 'hidden', 
+                          border: item.textInside ? '2px solid var(--brand-rose-gold)' : '2px solid var(--glass-border)', 
+                          boxShadow: 'var(--shadow-glass)',
+                          transition: 'transform 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: item.textInside ? 'rgba(183,110,121,0.06)' : 'transparent',
+                          color: 'var(--brand-rose-gold)',
+                          fontWeight: 800,
+                          fontSize: '1.2rem'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        {item.textInside ? (
+                          item.textInside
+                        ) : (
+                          <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        )}
+                      </div>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pick Their Fav Flowers */}
+              {favFlowers.length > 0 && (
+                <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.4rem', fontWeight: 800, color: 'var(--brand-rose-gold)', margin: 0 }}>
+                    Pick Their Fav Flowers
+                  </h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px' }} className="mobile-scroll-row">
+                    {favFlowers.map((item, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => selectQuickFilter('Fragrance')}
+                        style={{
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-glass)',
+                        border: '1px solid var(--glass-border)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        background: 'var(--bg-secondary)'
+                      }}
+                    >
+                      <div style={{ height: '140px', overflow: 'hidden' }}>
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }} 
+                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        />
+                      </div>
+                        <div style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {item.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Anniversary Specials Split Banner */}
+              <div style={{ padding: '32px 24px 0', display: 'grid', gridTemplateColumns: '4fr 8fr', gap: '24px' }} className="mobile-stack">
+                <div 
+                  style={{
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--glass-border)',
+                    boxShadow: 'var(--shadow-glass)',
+                    padding: '32px 24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    minHeight: '280px',
+                    position: 'relative'
+                  }}
+                >
+                  <span style={{ fontSize: '0.8rem', color: '#b76e79', fontWeight: 800 }}>CELEBRATIONS MADE EXTRAORDINARY</span>
+                  <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.8rem', fontWeight: 900, color: 'var(--brand-rose-gold)', lineHeight: '1.3', margin: 0 }}>
+                    Birthdays Made Special
+                  </h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    Joyful, curated gift baskets and custom flower boxes for premium milestone gifting.
+                  </p>
+                  <button 
+                    onClick={() => selectQuickFilter('Traditional Gifts')}
+                    style={{ width: 'fit-content', border: 'none', background: 'var(--brand-rose-gold)', color: '#fff', padding: '10px 20px', borderRadius: '30px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    Explore <ChevronRight size={14} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }} className="mobile-scroll-row">
+                  {[
+                    { name: 'Floral Baskets', image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&q=80&w=250', cat: 'Fragrance' },
+                    { name: 'Cakes & Treats', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=250', cat: 'Self Care' },
+                    { name: 'Personalized Mugs', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=250', cat: 'Stationery' },
+                    { name: 'Green Plants', image: 'https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=250', cat: 'Home & Living' },
+                    { name: 'Premium Sets', image: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=250', cat: 'Traditional Gifts' },
+                    { name: 'Gift Hampers', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=250', cat: 'Self Care' },
+                    { name: 'Balloon Decors', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80&w=250', cat: 'Traditional Gifts' },
+                    { name: 'Best Sellers', image: '/personalized_gift.png', cat: 'All' }
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        trackEvent('CATEGORY_CLICK', '/browse', item.name, { type: 'quick_filter' });
+                        selectQuickFilter(item.cat);
+                      }}
+                      style={{
+                        flexShrink: 0,
+                        minWidth: '110px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-glass)',
+                        border: '1px solid var(--glass-border)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        background: 'var(--bg-secondary)'
+                      }}
+                    >
+                      <div style={{ height: '100px', overflow: 'hidden' }}>
+                        <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <div style={{ padding: '8px 2px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {item.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Tabbed Catalog Section */}
           <div id="tailored-section" style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -570,37 +575,60 @@ const GiftBrowsePage = () => {
             
             {/* Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px', marginTop: '10px' }}>
-              {tailoredProducts.map((item) => (
-                <Card
-                  key={item.id}
-                  hoverable={true}
-                  onClick={() => navigate(isAuthenticated ? `/gifts/${item.id}` : '/login')}
-                  style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0px', borderRadius: '16px', overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)' }}
-                >
-                  <div style={{ height: '220px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-                    <MediaCarousel mediaUrls={[item.image, ...(item.additionalImages || [])].filter(Boolean)} altText={item.name} />
-                    <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
-                      <Badge variant={item.availability === 'Out of Stock' ? 'danger' : 'success'}>{item.availability}</Badge>
+              {tailoredProducts.map((item) => {
+                const isLowStock = item.stock <= 5 && item.stock > 0;
+                const peopleLooking = (item.id * 7 % 10) + 2; // Deterministic random number
+                
+                return (
+                  <Card
+                    key={item.id}
+                    hoverable={true}
+                    onClick={() => navigate(isAuthenticated ? `/gifts/${item.id}` : '/login')}
+                    style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0px', borderRadius: '16px', overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)' }}
+                  >
+                    <div style={{ height: '220px', width: '100%', position: 'relative', overflow: 'hidden' }}>
+                      <MediaCarousel mediaUrls={[item.image, ...(item.additionalImages || [])].filter(Boolean)} altText={item.name} />
+                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <Badge solid={true} variant={item.availability === 'Out of Stock' ? 'danger' : 'success'}>{item.availability}</Badge>
+                        {isLowStock && (
+                          <Badge solid={true} variant="warning" style={{ animation: 'pulse 2s infinite', fontSize: '0.65rem' }}>Only {item.stock} left!</Badge>
+                        )}
+                      </div>
+                      <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(255,255,255,0.9)', padding: '4px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 700, color: '#e11d48', backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                        🔥 {peopleLooking} people looking
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--brand-rose-gold)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>{item.category}</span>
-                      <h3 style={{ fontSize: '0.94rem', fontWeight: 700, lineHeight: 1.4, marginBottom: '6px', color: 'var(--text-primary)', marginTop: 0 }}>{item.name}</h3>
-                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.description}</p>
+                    <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--brand-rose-gold)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>{item.category}</span>
+                        <h3 style={{ fontSize: '0.94rem', fontWeight: 700, lineHeight: 1.4, marginBottom: '6px', color: 'var(--text-primary)', marginTop: 0 }}>{item.name}</h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.description}</p>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '12px' }}>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--brand-rose-gold)' }}>₹{item.price}</span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={(e) => handleAddToCart(e, item)}
+                            style={{ background: 'rgba(183,110,121,0.06)', border: '1px solid rgba(183,110,121,0.2)', color: 'var(--brand-rose-gold)', padding: '6px 10px', borderRadius: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <ShoppingBag size={13} />
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              handleAddToCart(e, item);
+                              if (isAuthenticated) navigate('/checkout');
+                            }}
+                            className="pulse-button-hover"
+                            style={{ background: 'var(--brand-rose-gold)', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', boxShadow: '0 2px 8px rgba(183,110,121,0.3)', transition: 'all 0.2s' }}
+                          >
+                            Buy Now
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '12px' }}>
-                      <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--brand-rose-gold)' }}>₹{item.price}</span>
-                      <button 
-                        onClick={(e) => handleAddToCart(e, item)}
-                        style={{ background: 'rgba(183,110,121,0.06)', border: '1px solid rgba(183,110,121,0.2)', color: 'var(--brand-rose-gold)', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontWeight: 700, fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <ShoppingBag size={13} /> Add
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
 

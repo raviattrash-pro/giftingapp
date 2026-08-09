@@ -22,7 +22,7 @@ const GiftCheckoutPage = () => {
   const navigate = useNavigate();
   const { cart, updateCartItemQuantity, removeFromCart, checkout, clearCart, paymentSettings, fetchPaymentSettings, fetchDeliveryQuote } = useGiftStore();
   const { recipients } = useRecipientStore();
-  const { addToast, checkoutConfig, fetchCheckoutConfig } = useUiStore();
+  const { addToast, checkoutConfig, fetchCheckoutConfig, globalFeatures, fetchGlobalFeatures } = useUiStore();
   const { addTransaction } = useBudgetStore();
   const { addNotification } = useNotificationStore();
 
@@ -61,6 +61,7 @@ const GiftCheckoutPage = () => {
   const [transactionId, setTransactionId] = useState('');
   const [paymentScreenshot, setPaymentScreenshot] = useState('');
   const [screenshotName, setScreenshotName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('RAZORPAY'); // 'RAZORPAY' or 'MANUAL_QR'
 
   // Coupon
   const [couponCodeInput, setCouponCodeInput] = useState('');
@@ -70,7 +71,9 @@ const GiftCheckoutPage = () => {
 
   useEffect(() => {
     fetchPaymentSettings();
-    fetchCheckoutConfig(); // <--- Add this
+    fetchCheckoutConfig(); 
+    fetchGlobalFeatures(); // <--- Fetch the latest global features
+
     const fetchDeliveryConfig = async () => {
       try {
         const confRes = await api.get('/config/DELIVERY_CHARGES_HIDDEN');
@@ -82,7 +85,20 @@ const GiftCheckoutPage = () => {
       } catch (err) {}
     };
     fetchDeliveryConfig();
-  }, [fetchPaymentSettings, fetchCheckoutConfig]);
+  }, [fetchPaymentSettings, fetchCheckoutConfig, fetchGlobalFeatures]);
+
+  // Update default payment method when global features load
+  useEffect(() => {
+    if (globalFeatures) {
+      if (globalFeatures.razorpayPayment && !globalFeatures.manualQrPayment) {
+        setPaymentMethod('RAZORPAY');
+      } else if (!globalFeatures.razorpayPayment && globalFeatures.manualQrPayment) {
+        setPaymentMethod('MANUAL_QR');
+      } else if (!globalFeatures.razorpayPayment && !globalFeatures.manualQrPayment) {
+        setPaymentMethod('');
+      }
+    }
+  }, [globalFeatures]);
 
   useEffect(() => {
     const getQuote = async () => {
@@ -251,9 +267,39 @@ const GiftCheckoutPage = () => {
     const file = e.target.files[0];
     if (file) {
       setScreenshotName(file.name);
+      
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress aggressively to <200kb to easily fit in localStorage
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+        setPaymentScreenshot(compressedBase64);
+      };
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPaymentScreenshot(reader.result);
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -263,6 +309,83 @@ const GiftCheckoutPage = () => {
     if (paymentSettings?.upiId) {
       navigator.clipboard.writeText(paymentSettings.upiId);
       addToast('UPI ID copied to clipboard', 'info');
+    }
+  };
+
+  const handleManualCheckout = async (e) => {
+    if (e) e.preventDefault();
+    if (cart.length === 0) return;
+
+    if (!recipientName.trim()) {
+      addToast('Please provide the recipient\'s name.', 'error');
+      return;
+    }
+
+    if (!address.trim() || !city.trim() || !pincode.trim()) {
+      addToast('Please provide the full delivery address.', 'error');
+      return;
+    }
+
+    if (!transactionId.trim() || !paymentScreenshot) {
+      addToast('Please provide the Transaction ID and upload the payment screenshot.', 'error');
+      return;
+    }
+
+    try {
+      const orderData = {
+        items: cart,
+        address, city, state, pincode,
+        recipientName, recipientPhone, recipientEmail,
+        personalMessage, scheduledDate, scheduledTime,
+        courierType, deliveryService, deliveryCharge, adminDeliveryCharge,
+        grandTotal,
+        wrappingCharge: wrappingCost || 0,
+        tax: tax || 0,
+        transactionId,
+        paymentScreenshot
+      };
+      const res = await checkout(orderData);
+      
+      // --- Optimistic UI Update for My Orders ---
+      try {
+        const cachedStr = localStorage.getItem('user_orders_cache');
+        const cachedOrders = cachedStr ? JSON.parse(cachedStr) : [];
+        const rawId = res?.orderId || `manual_${Date.now()}`;
+        const cleanId = rawId.toString().replace('ord_', '');
+        const optimisticOrder = {
+          id: cleanId,
+          status: 'PENDING_VERIFICATION',
+          createdAt: new Date().toISOString(),
+          amount: subtotal + tax,
+          giftName: cart[0]?.gift?.name || 'Items',
+          imageUrl: cart[0]?.gift?.imageUrl,
+          deliveryAddress: `${address}, ${city}, ${pincode}`,
+          deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
+          wrappingCharge: wrappingCost || 0,
+          isOffline: res?.offline || false
+        };
+        localStorage.setItem('user_orders_cache', JSON.stringify([optimisticOrder, ...cachedOrders]));
+
+        if (wrappingCost > 0) {
+          const wrapsStr = localStorage.getItem('order_wraps_cache');
+          const wraps = wrapsStr ? JSON.parse(wrapsStr) : {};
+          wraps[optimisticOrder.id] = wrappingCost;
+          localStorage.setItem('order_wraps_cache', JSON.stringify(wraps));
+        }
+      } catch (e) {
+        console.error('Failed to update orders cache optimistically', e);
+      }
+      // ------------------------------------------
+
+      if (res && res.offline) {
+         addToast('You are offline. Order saved locally and will sync when online.', 'info', 6000);
+         navigate('/orders');
+      } else {
+         addToast('Order placed successfully! Awaiting admin verification.', 'success');
+         navigate('/orders');
+      }
+    } catch (err) {
+      addToast(err.message || 'Failed to place order. Please try again.', 'error');
     }
   };
 
@@ -315,7 +438,8 @@ const GiftCheckoutPage = () => {
                 deliveryService: courierType === 'Instant' ? deliveryService : null,
                 deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
                 adminDeliveryCharge: courierType === 'Instant' ? adminDeliveryCharge : 0,
-                wrappingCharge: wrappingCost
+                wrappingCharge: wrappingCost || 0,
+                tax: tax || 0
               });
 
               cart.forEach(item => {
@@ -342,12 +466,12 @@ const GiftCheckoutPage = () => {
                   id: cleanId,
                   status: 'PENDING_VERIFICATION',
                   createdAt: new Date().toISOString(),
-                  amount: grandTotal,
+                  amount: subtotal + tax,
                   giftName: cart[0]?.gift?.name || 'Items',
                   imageUrl: cart[0]?.gift?.imageUrl,
                   deliveryAddress: `${address}, ${city}, ${pincode}`,
                   deliveryCharge: courierType === 'Instant' ? deliveryCharge : deliveryCost,
-                  wrappingCharge: wrappingCost,
+                  wrappingCharge: wrappingCost || 0,
                   isOffline: false
                 };
                 localStorage.setItem('user_orders_cache', JSON.stringify([optimisticOrder, ...cachedOrders]));
@@ -602,7 +726,7 @@ const GiftCheckoutPage = () => {
                     required
                   />
                 </div>
-                {hideDeliveryCharges && (
+                {hideDeliveryCharges && globalFeatures?.advancedDelivery !== false && (
                   <>
                     {/* Delivery Mode Toggle */}
                     <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1081,7 +1205,7 @@ const GiftCheckoutPage = () => {
                     <div>{recipientName}{recipientPhone && ` • ${recipientPhone}`}</div>
                     {address && <div>{address}{city && `, ${city}`}{state && `, ${state}`}{pincode && ` - ${pincode}`}</div>}
                     {personalMessage && <div style={{ fontStyle: 'italic', marginTop: '4px', color: 'var(--text-muted)' }}>"{personalMessage}"</div>}
-                    {courierType === 'Instant' && (
+                    {globalFeatures?.advancedDelivery !== false && courierType === 'Instant' && (
                       <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', marginTop: '6px', fontSize: '0.74rem', color: '#b76e79' }}>
                         ⚡ <strong>{deliveryService} local delivery</strong> scheduled for <strong>{scheduledDate}</strong> at <strong>{scheduledTime}</strong>
                       </div>
@@ -1107,7 +1231,7 @@ const GiftCheckoutPage = () => {
                 </div>
               </div>
 
-              {/* Razorpay Payment Integration */}
+              {/* Payment Methods */}
               <div 
                 style={{
                   borderTop: '1px solid var(--glass-border)',
@@ -1117,21 +1241,113 @@ const GiftCheckoutPage = () => {
                   gap: '16px'
                 }}
               >
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff' }}>Secure Payment</h4>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Pay securely using Razorpay. All major Credit Cards, UPI, and Net Banking supported.
-                </p>
-              </div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>Select Payment Method</h4>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {globalFeatures?.razorpayPayment !== false && (
+                    <button
+                      onClick={() => setPaymentMethod('RAZORPAY')}
+                      style={{
+                        flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                        background: paymentMethod === 'RAZORPAY' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: '1px solid', borderColor: paymentMethod === 'RAZORPAY' ? 'var(--brand-rose-gold)' : 'var(--glass-border)',
+                        color: paymentMethod === 'RAZORPAY' ? 'var(--brand-rose-gold)' : 'var(--text-secondary)',
+                        fontWeight: 600, fontSize: '0.85rem'
+                      }}
+                    >
+                      💳 Razorpay Secure
+                    </button>
+                  )}
+                  {globalFeatures?.manualQrPayment !== false && (
+                    <button
+                      onClick={() => setPaymentMethod('MANUAL_QR')}
+                      style={{
+                        flex: 1, padding: '12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                        background: paymentMethod === 'MANUAL_QR' ? 'rgba(183,110,121,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: '1px solid', borderColor: paymentMethod === 'MANUAL_QR' ? 'var(--brand-rose-gold)' : 'var(--glass-border)',
+                        color: paymentMethod === 'MANUAL_QR' ? 'var(--brand-rose-gold)' : 'var(--text-secondary)',
+                        fontWeight: 600, fontSize: '0.85rem'
+                      }}
+                    >
+                      📱 Scan QR Code
+                    </button>
+                  )}
+                </div>
 
-              <Button 
-                onClick={handleRazorpayPayment} 
-                variant="primary" 
-                icon={ArrowRight} 
-                style={{ width: '100%', marginTop: '10px' }}
-                disabled={!recipientName || !address || !city || !pincode}
-              >
-                Pay ₹{grandTotal} with Razorpay
-              </Button>
+                {!globalFeatures?.razorpayPayment && !globalFeatures?.manualQrPayment && (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
+                    No payment methods are currently available.
+                  </div>
+                )}
+
+                {paymentMethod === 'RAZORPAY' ? (
+                  <>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      Pay securely using Razorpay. All major Credit Cards, UPI, and Net Banking supported.
+                    </p>
+                    <Button 
+                      onClick={handleRazorpayPayment} 
+                      variant="primary" 
+                      icon={ArrowRight} 
+                      style={{ width: '100%', marginTop: '10px' }}
+                      disabled={!recipientName || !address || !city || !pincode}
+                    >
+                      Pay ₹{grandTotal} with Razorpay
+                    </Button>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px dashed var(--glass-border)' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                        Scan the QR code below using any UPI app (GPay, PhonePe, Paytm) to pay <strong>₹{grandTotal}</strong>
+                      </p>
+                      {paymentSettings?.qrCodeUrl ? (
+                        <div style={{ background: '#fff', padding: '8px', borderRadius: '8px', display: 'inline-block' }}>
+                          <img src={paymentSettings.qrCodeUrl} alt="UPI QR Code" style={{ width: '180px', height: '180px', objectFit: 'contain' }} />
+                        </div>
+                      ) : (
+                        <div style={{ padding: '20px', background: '#333', color: '#ccc' }}>QR Code not configured by Admin</div>
+                      )}
+                      {paymentSettings?.upiId && (
+                        <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <span>UPI ID: <strong>{paymentSettings.upiId}</strong></span>
+                          <button onClick={copyUpiId} style={{ background: 'none', border: 'none', color: 'var(--brand-rose-gold)', cursor: 'pointer', padding: '4px' }}>Copy</button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>Transaction / UTR Number</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 123456789012"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        style={{ padding: '10px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                      />
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>Payment Screenshot</label>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleScreenshotChange}
+                        style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
+                      />
+                    </div>
+
+                    <Button 
+                      onClick={handleManualCheckout} 
+                      variant="primary" 
+                      style={{ width: '100%', marginTop: '8px', background: 'var(--color-success)', borderColor: 'var(--color-success)' }}
+                      disabled={!recipientName || !address || !transactionId || !paymentScreenshot}
+                    >
+                      Confirm Order & Upload Receipt
+                    </Button>
+                  </div>
+                )}
+              </div>
             </Card>
           </div>
 

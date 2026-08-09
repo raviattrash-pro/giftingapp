@@ -27,7 +27,8 @@ const Header = () => {
     isInstallable,
     setDeferredPrompt,
     setIsInstallable,
-    navCategories
+    navCategories,
+    globalFeatures
   } = useUiStore();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -71,9 +72,8 @@ const Header = () => {
   }, []);
 
   const isEnabled = (flagKey) => {
-    if (!user) return false;
-    // For demonstration purposes, enable all premium features for all authenticated users
-    return true;
+    // If the admin has globally disabled it, hide it for everyone.
+    return globalFeatures[flagKey] === true;
   };
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -211,13 +211,15 @@ const Header = () => {
             <Calendar size={24} />
           </div>
 
-          <div 
-            className="nav-icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title="Toggle Theme"
-          >
-            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-          </div>
+          {globalFeatures?.uiDesignMode !== true && (
+            <div 
+              className="nav-icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+            </div>
+          )}
 
           <div 
             ref={spatialMenuRef}
@@ -422,16 +424,22 @@ const Header = () => {
           </button>
 
           {/* Theme Switcher Button */}
-          <div 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--brand-rose-gold)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-            title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            <span style={{ fontSize: '0.62rem', fontWeight: 600, marginTop: '4px' }}>Theme</span>
-          </div>
+          {globalFeatures?.uiDesignMode !== true && (
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              style={{
+                background: 'none', border: 'none', color: 'var(--text-secondary)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer',
+                transition: 'color 0.2s', padding: 0
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--brand-rose-gold)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+              title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              <span style={{ fontSize: '0.62rem', fontWeight: 600, marginTop: '4px' }}>Theme</span>
+            </button>
+          )}
 
           {/* My Reminders */}
           <div 
@@ -544,6 +552,9 @@ const Header = () => {
                         <button onClick={() => { navigate('/admin/analytics'); setShowUserMenu(false); }} style={{ ...dropdownItemStyle, color: 'var(--text-primary)' }}>
                           Analytics
                         </button>
+                        <button onClick={() => { navigate('/admin/features'); setShowUserMenu(false); }} style={{ ...dropdownItemStyle, color: 'var(--text-primary)' }}>
+                          Global Features
+                        </button>
                       </>
                     )}
                     <div style={{ height: '1px', background: 'var(--glass-border)', margin: '4px 0' }} />
@@ -591,37 +602,39 @@ const Header = () => {
                 minWidth: '280px', zIndex: 1000,
                 padding: '0',
               }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--glass-border)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Palette size={12} /> UI Design Mode
+                {(globalFeatures?.uiDesignMode !== false || user?.role === 'ADMIN') && (
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--glass-border)' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Palette size={12} /> UI Design Mode
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      {designStylesList.map(style => (
+                        <button
+                          key={style.id}
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            setDesignStyle(style.id); 
+                          }}
+                          style={{
+                            padding: '6px 8px',
+                            fontSize: '0.7rem',
+                            borderRadius: '6px',
+                            border: designStyle === style.id ? '1px solid var(--brand-rose-gold)' : '1px solid var(--glass-border)',
+                            background: designStyle === style.id ? 'rgba(183, 110, 121, 0.1)' : 'transparent',
+                            color: designStyle === style.id ? 'var(--brand-rose-gold)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                            fontWeight: designStyle === style.id ? 700 : 500,
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {style.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                    {designStylesList.map(style => (
-                      <button
-                        key={style.id}
-                        onClick={(e) => { 
-                          e.stopPropagation();
-                          setDesignStyle(style.id); 
-                        }}
-                        style={{
-                          padding: '6px 8px',
-                          fontSize: '0.7rem',
-                          borderRadius: '6px',
-                          border: designStyle === style.id ? '1px solid var(--brand-rose-gold)' : '1px solid var(--glass-border)',
-                          background: designStyle === style.id ? 'rgba(183, 110, 121, 0.1)' : 'transparent',
-                          color: designStyle === style.id ? 'var(--brand-rose-gold)' : 'var(--text-primary)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          fontFamily: 'inherit',
-                          fontWeight: designStyle === style.id ? 700 : 500,
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {style.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
                 
                 <div style={{ padding: '8px 0' }}>
                 {moreNavItems.length > 0 ? (

@@ -12,7 +12,7 @@ import Badge from '../../components/ui/Badge';
 
 const AdminCatalogPage = () => {
   const { catalog, fetchCatalog, addProduct, updateProduct, deleteProduct } = useGiftStore();
-  const { addToast, navCategories, updateNavCategories, checkoutConfig, fetchCheckoutConfig, updateCheckoutConfig } = useUiStore();
+  const { addToast, navCategories, updateNavCategories, checkoutConfig, fetchCheckoutConfig, updateCheckoutConfig, globalFeatures } = useUiStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -322,8 +322,12 @@ const AdminCatalogPage = () => {
   };
 
   const totalStock = catalog.reduce((sum, product) => sum + Number(product.stock || 0), 0);
-  const lowStockCount = catalog.filter((product) => product.stock > 0 && product.stock <= 5).length;
-  const outOfStockCount = catalog.filter((product) => Number(product.stock || 0) <= 0).length;
+  const lowStockItems = catalog.filter((product) => product.stock > 0 && product.stock <= 5);
+  const lowStockCount = lowStockItems.length;
+  const outOfStockItems = catalog.filter((product) => Number(product.stock || 0) <= 0);
+  const outOfStockCount = outOfStockItems.length;
+  const [showLowStockPanel, setShowLowStockPanel] = useState(false);
+  const [showOutOfStockPanel, setShowOutOfStockPanel] = useState(false);
 
   const handleDeleteConfirm = async () => {
     if (!currentProduct) return;
@@ -374,27 +378,76 @@ const AdminCatalogPage = () => {
             <h3 style={{ fontSize: '1.4rem' }}>{totalStock}</h3>
           </div>
         </Card>
-        <Card hoverable={false} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 196, 87, 0.08)', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Package size={18} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Low Stock Items</p>
-            <h3 style={{ fontSize: '1.4rem' }}>{lowStockCount}</h3>
+        <Card hoverable={false} style={{ padding: '16px', cursor: lowStockCount > 0 ? 'pointer' : 'default', border: lowStockCount > 0 ? '1px solid rgba(245, 158, 11, 0.3)' : undefined }} onClick={() => lowStockCount > 0 && setShowLowStockPanel(prev => !prev)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 196, 87, 0.08)', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Package size={18} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Low Stock Items</p>
+              <h3 style={{ fontSize: '1.4rem', color: lowStockCount > 0 ? '#f59e0b' : undefined }}>{lowStockCount}</h3>
+            </div>
+            {lowStockCount > 0 && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{showLowStockPanel ? '▲ Hide' : '▼ Details'}</span>}
           </div>
         </Card>
-        <Card hoverable={false} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 94, 125, 0.08)', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ShieldAlert size={18} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Out of Stock</p>
-            <h3 style={{ fontSize: '1.4rem' }}>{outOfStockCount}</h3>
+        <Card hoverable={false} style={{ padding: '16px', cursor: outOfStockCount > 0 ? 'pointer' : 'default', border: outOfStockCount > 0 ? '1px solid rgba(225, 29, 72, 0.3)' : undefined }} onClick={() => outOfStockCount > 0 && setShowOutOfStockPanel(prev => !prev)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 94, 125, 0.08)', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldAlert size={18} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Out of Stock</p>
+              <h3 style={{ fontSize: '1.4rem', color: outOfStockCount > 0 ? '#e11d48' : undefined }}>{outOfStockCount}</h3>
+            </div>
+            {outOfStockCount > 0 && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{showOutOfStockPanel ? '▲ Hide' : '▼ Details'}</span>}
           </div>
         </Card>
       </div>
 
+      {/* Low Stock Items Detail Panel */}
+      {showLowStockPanel && lowStockItems.length > 0 && (
+        <Card hoverable={false} style={{ padding: '16px', border: '1px solid rgba(245, 158, 11, 0.2)', background: 'rgba(245, 158, 11, 0.03)' }}>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#f59e0b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={16} /> Low Stock Items ({lowStockItems.length})
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {lowStockItems.map(item => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <img src={item.image || item.imageUrl} alt={item.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.name}</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>{item.category} · ₹{item.price}</p>
+                </div>
+                <Badge solid variant="warning" style={{ fontSize: '0.72rem' }}>{item.stock} left</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Out of Stock Items Detail Panel */}
+      {showOutOfStockPanel && outOfStockItems.length > 0 && (
+        <Card hoverable={false} style={{ padding: '16px', border: '1px solid rgba(225, 29, 72, 0.2)', background: 'rgba(225, 29, 72, 0.03)' }}>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#e11d48', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldAlert size={16} /> Out of Stock Items ({outOfStockItems.length})
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {outOfStockItems.map(item => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                <img src={item.image || item.imageUrl} alt={item.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', background: 'var(--bg-tertiary)' }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.name}</p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>{item.category} · ₹{item.price}</p>
+                </div>
+                <Badge solid variant="danger" style={{ fontSize: '0.72rem' }}>Out of Stock</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Delivery Settings Management */}
+      {globalFeatures?.deliveryLogistics !== false && (
       <Card hoverable={false} style={{ padding: '16px' }}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
           <div>
@@ -455,7 +508,9 @@ const AdminCatalogPage = () => {
           </div>
         </div>
       </Card>
+      )}
 
+      {globalFeatures?.deliveryTiers !== false && (
       <Card hoverable={false} style={{ padding: '16px' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Checkout Pricing Config</h3>
         {localCheckoutConfig && (
@@ -499,8 +554,10 @@ const AdminCatalogPage = () => {
           </form>
         )}
       </Card>
+      )}
 
       {/* Navigation Events Management */}
+      {globalFeatures?.navigationEvents !== false && (
       <Card hoverable={false} style={{ padding: '16px' }}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
           <div>
@@ -593,8 +650,10 @@ const AdminCatalogPage = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Wrapping Styles Management */}
+      {globalFeatures?.wrappingStyles !== false && (
       <Card hoverable={false} style={{ padding: '16px' }}>
         <div className="flex-between" style={{ marginBottom: '16px' }}>
           <div>
@@ -675,6 +734,7 @@ const AdminCatalogPage = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Filter and Search Panel */}
       <Card hoverable={false} style={{ padding: '16px' }}>

@@ -147,7 +147,12 @@ const OrderHistoryPage = () => {
         }
       } catch (e) {}
 
-      localStorage.setItem('user_orders_cache', JSON.stringify(newOrders));
+      const cacheSafeOrders = newOrders.map(({ paymentScreenshot, ...rest }) => rest);
+      try {
+        localStorage.setItem('user_orders_cache', JSON.stringify(cacheSafeOrders));
+      } catch (cacheErr) {
+        console.warn('Failed to cache orders to localStorage', cacheErr);
+      }
 
       // Detect status changes — fire notification for newly confirmed/rejected orders
       const prev = previousStatusesRef.current;
@@ -192,8 +197,8 @@ const OrderHistoryPage = () => {
 
   useEffect(() => {
     fetchOrders(false);
-    // Poll every 30 seconds for status updates
-    const interval = setInterval(() => fetchOrders(true), 30000);
+    // Poll every 3 seconds for fast real-time status updates
+    const interval = setInterval(() => fetchOrders(true), 3000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
@@ -958,9 +963,15 @@ const OrderHistoryPage = () => {
                         <span style={{ color: '#333' }}>₹{billOrder.wrappingCharge}</span>
                      </div>
                    )}
+                   {billOrder.tax > 0 && (
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#666' }}>Luxury Tax:</span>
+                        <span style={{ color: '#333' }}>₹{billOrder.tax}</span>
+                     </div>
+                   )}
                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '12px', paddingTop: '12px', borderTop: '2px solid #eaeaea', color: '#000' }}>
                       <span>Grand Total:</span>
-                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0)}</span>
+                      <span>₹{(billOrder.amount || 0) + (billOrder.deliveryCharge || 0) + (billOrder.wrappingCharge || 0) + (billOrder.tax || 0)}</span>
                    </div>
                 </div>
              </div>

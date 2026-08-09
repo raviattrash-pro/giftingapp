@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { Save } from 'lucide-react';
 import api from '../../services/api';
 import { useUiStore } from '../../store/uiStore';
 
@@ -67,13 +66,6 @@ const AdminCMSPage = () => {
     }
   };
 
-  const handleSaveConfig = async (e) => {
-    e.preventDefault();
-    setSavingConfig(true);
-    await updateCheckoutConfig(localConfig);
-    setSavingConfig(false);
-  };
-
   const handleTierChange = (index, field, value) => {
     const newTiers = [...localConfig.deliveryTiers];
     newTiers[index][field] = Number(value);
@@ -135,11 +127,12 @@ const AdminCMSPage = () => {
             />
           </div>
 
-          <Button type="submit" variant="primary" loading={saving} icon={Save}>
+          <Button type="submit" variant="primary" loading={saving}>
             Save Content
           </Button>
         </form>
       </Card>
+
     </div>
   );
 };

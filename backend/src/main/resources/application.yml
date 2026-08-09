@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   datasource:
@@ -50,7 +50,7 @@ spring:
 
 app:
   jwt:
-    secret: "bXlTdXBlclNlY3JldEtleUZvckdpZnRDb25jaWVyZ2VBcHBsaWNhdGlvbjIwMjZWZXJ5TG9uZ1NlY3JldA=="
+    secret: ${JWT_SECRET:bXlTdXBlclNlY3JldEtleUZvckdpZnRDb25jaWVyZ2VBcHBsaWNhdGlvbjIwMjZWZXJ5TG9uZ1NlY3JldA==}
     access-token-expiration-ms: 900000
     refresh-token-expiration-ms: 604800000
 

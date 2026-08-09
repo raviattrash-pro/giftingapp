@@ -66,6 +66,12 @@ public class GiftOrder {
     @Column(name = "admin_delivery_charge", precision = 10, scale = 2)
     private BigDecimal adminDeliveryCharge;
 
+    @Column(name = "wrapping_charge", precision = 10, scale = 2)
+    private BigDecimal wrappingCharge;
+
+    @Column(name = "tax", precision = 10, scale = 2)
+    private BigDecimal tax;
+
     @Column(name = "tracking_id", length = 100)
     private String trackingId;
 
@@ -85,7 +91,7 @@ public class GiftOrder {
     public GiftOrder() {
     }
 
-    public GiftOrder(Long id, User user, Recipient recipient, Occasion occasion, String giftName, String giftDescription, BigDecimal amount, Integer quantity, String status, LocalDate scheduledDate, LocalTime scheduledTime, String personalMessage, Boolean isAnonymous, String deliveryType, String deliveryService, BigDecimal deliveryCharge, BigDecimal adminDeliveryCharge, String trackingId, String transactionId, String paymentScreenshot, String deliveryAddress, LocalDateTime createdAt) {
+    public GiftOrder(Long id, User user, Recipient recipient, Occasion occasion, String giftName, String giftDescription, BigDecimal amount, Integer quantity, String status, LocalDate scheduledDate, LocalTime scheduledTime, String personalMessage, Boolean isAnonymous, String deliveryType, String deliveryService, BigDecimal deliveryCharge, BigDecimal adminDeliveryCharge, BigDecimal wrappingCharge, BigDecimal tax, String trackingId, String transactionId, String paymentScreenshot, String deliveryAddress, LocalDateTime createdAt) {
         this.id = id;
         this.user = user;
         this.recipient = recipient;
@@ -103,6 +109,8 @@ public class GiftOrder {
         this.deliveryService = deliveryService;
         this.deliveryCharge = deliveryCharge;
         this.adminDeliveryCharge = adminDeliveryCharge;
+        this.wrappingCharge = wrappingCharge;
+        this.tax = tax;
         this.trackingId = trackingId;
         this.transactionId = transactionId;
         this.paymentScreenshot = paymentScreenshot;
@@ -238,13 +246,14 @@ public class GiftOrder {
         this.deliveryCharge = deliveryCharge;
     }
 
-    public BigDecimal getAdminDeliveryCharge() {
-        return this.adminDeliveryCharge;
-    }
+    public BigDecimal getAdminDeliveryCharge() { return this.adminDeliveryCharge; }
+    public void setAdminDeliveryCharge(BigDecimal adminDeliveryCharge) { this.adminDeliveryCharge = adminDeliveryCharge; }
 
-    public void setAdminDeliveryCharge(BigDecimal adminDeliveryCharge) {
-        this.adminDeliveryCharge = adminDeliveryCharge;
-    }
+    public BigDecimal getWrappingCharge() { return wrappingCharge; }
+    public void setWrappingCharge(BigDecimal wrappingCharge) { this.wrappingCharge = wrappingCharge; }
+
+    public BigDecimal getTax() { return tax; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
 
     public String getTrackingId() {
         return this.trackingId;
@@ -343,6 +352,8 @@ public class GiftOrder {
         private String deliveryService;
         private BigDecimal deliveryCharge;
         private BigDecimal adminDeliveryCharge;
+        private BigDecimal wrappingCharge;
+        private BigDecimal tax;
         private String trackingId;
         private String transactionId;
         private String paymentScreenshot;
@@ -434,6 +445,16 @@ public class GiftOrder {
 
         public GiftOrderBuilder adminDeliveryCharge(BigDecimal adminDeliveryCharge) {
             this.adminDeliveryCharge = adminDeliveryCharge;
+            return this;
+        }
+
+        public GiftOrderBuilder wrappingCharge(BigDecimal wrappingCharge) {
+            this.wrappingCharge = wrappingCharge;
+            return this;
+        }
+
+        public GiftOrderBuilder tax(BigDecimal tax) {
+            this.tax = tax;
             return this;
         }
 

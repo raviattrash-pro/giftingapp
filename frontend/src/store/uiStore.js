@@ -36,6 +36,32 @@ const getStoredNavCategories = () => {
   return defaultNavCategories;
 };
 
+const defaultGlobalFeatures = {
+  aiAssistant: false,
+  budgetPlanner: false,
+  groupGifting: false,
+  secretSanta: false,
+  giftStories: false,
+  recipientVault: false,
+  futureLocker: false,
+  freeDeliveryBanner: false,
+  promotionalBanners: false,
+  razorpayPayment: true,
+  manualQrPayment: true,
+  advancedDelivery: false,
+  uiDesignMode: false
+};
+
+const getStoredGlobalFeatures = () => {
+  try {
+    const stored = localStorage.getItem('global_features');
+    if (stored) {
+      return { ...defaultGlobalFeatures, ...JSON.parse(stored) };
+    }
+  } catch (e) {}
+  return defaultGlobalFeatures;
+};
+
 export const useUiStore = create((set, get) => ({
   sidebarExpanded: true,
   activeTab: 'dashboard',
@@ -45,6 +71,7 @@ export const useUiStore = create((set, get) => ({
   isInstallable: false,
   toasts: [],
   navCategories: getStoredNavCategories(),
+  globalFeatures: getStoredGlobalFeatures(),
 
   toggleSidebar: () => set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
   setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
@@ -164,4 +191,32 @@ export const useUiStore = create((set, get) => ({
       return false;
     }
   },
+
+  fetchGlobalFeatures: async () => {
+    try {
+      const response = await api.get('/config/GLOBAL_FEATURES');
+      if (response.data && response.data.value) {
+        const parsed = JSON.parse(response.data.value);
+        const mergedFeatures = { ...defaultGlobalFeatures, ...parsed };
+        set({ globalFeatures: mergedFeatures });
+        localStorage.setItem('global_features', JSON.stringify(mergedFeatures));
+      }
+    } catch (err) {
+      console.log('Failed to fetch global features, using defaults', err);
+    }
+  },
+
+  updateGlobalFeatures: async (newFeatures) => {
+    set({ globalFeatures: newFeatures });
+    localStorage.setItem('global_features', JSON.stringify(newFeatures));
+    try {
+      await api.post('/config/GLOBAL_FEATURES', { value: JSON.stringify(newFeatures) });
+      get().addToast('Global features updated successfully.', 'success');
+      return true;
+    } catch (err) {
+      console.error('Failed to save global features', err);
+      get().addToast('Failed to save global features.', 'error');
+      return false;
+    }
+  }
 }));

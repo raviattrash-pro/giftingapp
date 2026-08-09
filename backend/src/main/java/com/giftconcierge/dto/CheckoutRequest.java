@@ -24,11 +24,13 @@ public class CheckoutRequest {
     private String deliveryService;
     private BigDecimal deliveryCharge;
     private BigDecimal adminDeliveryCharge;
+    private BigDecimal wrappingCharge;
+    private BigDecimal tax;
 
     public CheckoutRequest() {
     }
 
-    public CheckoutRequest(List<CartItemDto> items, String address, String city, String state, String pincode, String courierType, BigDecimal grandTotal, String transactionId, String paymentScreenshot, String recipientName, String recipientPhone, String recipientEmail, String personalMessage, LocalDate scheduledDate, LocalTime scheduledTime, String deliveryService, BigDecimal deliveryCharge, BigDecimal adminDeliveryCharge) {
+    public CheckoutRequest(List<CartItemDto> items, String address, String city, String state, String pincode, String courierType, BigDecimal grandTotal, String transactionId, String paymentScreenshot, String recipientName, String recipientPhone, String recipientEmail, String personalMessage, LocalDate scheduledDate, LocalTime scheduledTime, String deliveryService, BigDecimal deliveryCharge, BigDecimal adminDeliveryCharge, BigDecimal wrappingCharge, BigDecimal tax) {
         this.items = items;
         this.address = address;
         this.city = city;
@@ -47,6 +49,8 @@ public class CheckoutRequest {
         this.deliveryService = deliveryService;
         this.deliveryCharge = deliveryCharge;
         this.adminDeliveryCharge = adminDeliveryCharge;
+        this.wrappingCharge = wrappingCharge;
+        this.tax = tax;
     }
 
     public List<CartItemDto> getItems() { return items; }
@@ -102,6 +106,12 @@ public class CheckoutRequest {
 
     public BigDecimal getAdminDeliveryCharge() { return adminDeliveryCharge; }
     public void setAdminDeliveryCharge(BigDecimal adminDeliveryCharge) { this.adminDeliveryCharge = adminDeliveryCharge; }
+
+    public BigDecimal getWrappingCharge() { return wrappingCharge; }
+    public void setWrappingCharge(BigDecimal wrappingCharge) { this.wrappingCharge = wrappingCharge; }
+
+    public BigDecimal getTax() { return tax; }
+    public void setTax(BigDecimal tax) { this.tax = tax; }
 
     public String getFullAddress() {
         StringBuilder sb = new StringBuilder();

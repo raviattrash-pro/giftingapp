@@ -118,6 +118,8 @@ public class OrderService {
                     .deliveryService(request.getDeliveryService())
                     .deliveryCharge(request.getDeliveryCharge())
                     .adminDeliveryCharge(request.getAdminDeliveryCharge())
+                    .wrappingCharge(request.getWrappingCharge())
+                    .tax(request.getTax())
                     .build();
 
             order = giftOrderRepository.save(order);
@@ -276,6 +278,8 @@ public class OrderService {
         response.setScheduledTime(order.getScheduledTime());
         response.setDeliveryService(order.getDeliveryService());
         response.setDeliveryCharge(order.getDeliveryCharge());
+        response.setWrappingCharge(order.getWrappingCharge());
+        response.setTax(order.getTax());
         response.setPersonalMessage(order.getPersonalMessage());
         response.setIsAnonymous(order.getIsAnonymous());
         response.setDeliveryType(order.getDeliveryType());

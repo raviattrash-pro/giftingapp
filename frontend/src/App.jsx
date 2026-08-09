@@ -40,6 +40,7 @@ import AdminFlowersPage from './pages/admin/AdminFlowersPage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
 import AdminHeroCarouselPage from './pages/admin/AdminHeroCarouselPage';
 import AdminCMSPage from './pages/admin/AdminCMSPage';
+import AdminFeaturesPage from './pages/admin/AdminFeaturesPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
 import CustomerServicePage from './pages/CustomerServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -63,11 +64,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const FeatureRoute = ({ flagKey, children }) => {
-  const { user } = useAuthStore();
-  const flags = user?.featureFlags || {};
-  const isEnabled = flags[flagKey] === true;
+  const { globalFeatures } = useUiStore();
+  const isEnabled = globalFeatures[flagKey] === true;
 
-  return isEnabled ? children : <Navigate to="/settings" replace />;
+  return isEnabled ? children : <Navigate to="/" replace />;
 };
 
 const AdminRoute = ({ children }) => {
@@ -76,12 +76,18 @@ const AdminRoute = ({ children }) => {
 };
 
 const App = () => {
-  const { theme, designStyle, setDeferredPrompt, setIsInstallable, addToast, fetchNavCategories } = useUiStore();
+  const { theme, designStyle, setDeferredPrompt, setIsInstallable, addToast, fetchNavCategories, fetchGlobalFeatures } = useUiStore();
   const { syncPendingOrders } = useGiftStore();
 
   useEffect(() => {
     fetchNavCategories();
-  }, [fetchNavCategories]);
+    fetchGlobalFeatures();
+    const interval = setInterval(() => {
+      fetchGlobalFeatures();
+      fetchNavCategories();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [fetchNavCategories, fetchGlobalFeatures]);
 
   // Background offline sync
   useEffect(() => {
@@ -207,6 +213,7 @@ const App = () => {
           <Route path="/admin/coupons" element={<AdminRoute><AdminCouponsPage /></AdminRoute>} />
           <Route path="/admin/hero-carousel" element={<AdminRoute><AdminHeroCarouselPage /></AdminRoute>} />
           <Route path="/admin/cms" element={<AdminRoute><AdminCMSPage /></AdminRoute>} />
+          <Route path="/admin/features" element={<AdminRoute><AdminFeaturesPage /></AdminRoute>} />
         </Route>
 
         {/* Catch-all fallback */}

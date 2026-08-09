@@ -334,6 +334,54 @@ const SettingsPage = () => {
           </Card>
         )}
 
+        {/* Payment QR Settings Panel */}
+        {user?.role === 'ADMIN' && (
+          <Card hoverable={false} style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+              <CreditCard size={20} color="var(--brand-rose-gold)" />
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Payment Settings</h3>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
+              Configure your manual UPI payment details and QR code for customer checkouts.
+            </p>
+
+            <form onSubmit={handleSavePaymentSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <Input 
+                label="UPI ID"
+                type="text" 
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                placeholder="e.g. yourname@upi"
+              />
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>QR Code Image</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {qrCodeUrl && (
+                    <img 
+                      src={qrCodeUrl} 
+                      alt="QR Code" 
+                      style={{ width: '80px', height: '80px', objectFit: 'contain', border: '1px solid var(--border-color)', borderRadius: '8px' }} 
+                    />
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleQrUpload}
+                    style={{
+                      background: 'var(--bg-secondary)', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-primary)', width: '100%'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" variant="primary" loading={paymentLoading} style={{ width: '100%' }}>
+                Save Payment Settings
+              </Button>
+            </form>
+          </Card>
+        )}
 
       </div>
 

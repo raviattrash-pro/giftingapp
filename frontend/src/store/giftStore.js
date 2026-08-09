@@ -67,12 +67,7 @@ const toGiftPayload = (product) => {
   };
 };
 
-const FALLBACK_CATALOG = [
-  { id: 9901, name: "Luxury Wellness Spa Hamper", category: "Self Care", price: 1599, rating: 4.8, image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=600", description: "A deeply relaxing collection of premium bath and body essentials.", stock: 50 },
-  { id: 9902, name: "Artisan Chocolate Truffles Box", category: "Traditional Gifts", price: 899, rating: 4.9, image: "https://images.unsplash.com/photo-1548883354-94bcfe321cbb?auto=format&fit=crop&q=80&w=600", description: "Hand-crafted decadent chocolates for special celebrations.", stock: 50 },
-  { id: 9903, name: "Elegant Jade Plant Decor", category: "Home & Living", price: 1299, rating: 4.7, image: "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=600", description: "A beautiful succulent known to bring good fortune and positive energy.", stock: 50 },
-  { id: 9904, name: "Executive Coffee Collection", category: "Corporate", price: 1499, rating: 4.8, image: "https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&q=80&w=600", description: "Curated selection of single-origin coffee beans for the modern professional.", stock: 50 }
-];
+
 
 export const useGiftStore = create((set, get) => ({
   catalog: [],
@@ -88,10 +83,11 @@ export const useGiftStore = create((set, get) => ({
     try {
       const response = await api.post('/admin/gifts', toGiftPayload(product));
       const newProduct = normalizeGift(response.data);
-      set((state) => ({
-        catalog: [newProduct, ...state.catalog],
-        isLoading: false
-      }));
+      set((state) => {
+        const newCatalog = [newProduct, ...state.catalog];
+        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        return { catalog: newCatalog, isLoading: false };
+      });
       return newProduct;
     } catch (err) {
       set({ isLoading: false, error: err.response?.data?.message || 'Failed to add product' });
@@ -104,10 +100,11 @@ export const useGiftStore = create((set, get) => ({
     try {
       const response = await api.put(`/admin/gifts/${product.id}`, toGiftPayload(product));
       const updated = normalizeGift(response.data);
-      set((state) => ({
-        catalog: state.catalog.map((g) => g.id === product.id ? updated : g),
-        isLoading: false
-      }));
+      set((state) => {
+        const newCatalog = state.catalog.map((g) => g.id === product.id ? updated : g);
+        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        return { catalog: newCatalog, isLoading: false };
+      });
       return updated;
     } catch (err) {
       set({ isLoading: false, error: err.response?.data?.message || 'Failed to update product' });
@@ -119,10 +116,11 @@ export const useGiftStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       await api.delete(`/admin/gifts/${id}`);
-      set((state) => ({
-        catalog: state.catalog.filter((g) => g.id !== id),
-        isLoading: false
-      }));
+      set((state) => {
+        const newCatalog = state.catalog.filter((g) => g.id !== id);
+        try { localStorage.setItem('catalog_cache', JSON.stringify(newCatalog)); } catch (e) {}
+        return { catalog: newCatalog, isLoading: false };
+      });
     } catch (err) {
       set({ isLoading: false, error: err.response?.data?.message || 'Failed to delete product' });
       throw err;
@@ -137,8 +135,7 @@ export const useGiftStore = create((set, get) => ({
         set({ catalog: parsed.map(normalizeGift), isLoading: false, error: null });
       } catch (e) {}
     } else {
-      // Instant Fallback to ensure 0 seconds of waiting time even on first load!
-      set({ catalog: FALLBACK_CATALOG.map(normalizeGift), isLoading: true, error: null });
+      set({ catalog: [], isLoading: true, error: null });
     }
 
     try {
@@ -250,12 +247,19 @@ export const useGiftStore = create((set, get) => ({
   paymentSettings: null,
 
   fetchPaymentSettings: async () => {
+    const cachedStr = localStorage.getItem('payment_settings_cache');
+    if (cachedStr) {
+      try { set({ paymentSettings: JSON.parse(cachedStr) }); } catch(e) {}
+    }
+    
     try {
       const response = await api.get('/orders/payment-settings');
       set({ paymentSettings: response.data });
+      try { localStorage.setItem('payment_settings_cache', JSON.stringify(response.data)); } catch(e) {}
       return response.data;
     } catch (err) {
       console.error('Failed to fetch payment settings:', err);
+      if (cachedStr) return JSON.parse(cachedStr);
       return null;
     }
   },
@@ -443,7 +447,14 @@ export const useGiftStore = create((set, get) => ({
           try { existing = JSON.parse(existingStr); } catch (e) {}
         }
         existing.push(pendingOrder);
-        localStorage.setItem('pending_sync_orders', JSON.stringify(existing));
+        
+        try {
+          localStorage.setItem('pending_sync_orders', JSON.stringify(existing));
+        } catch (storageErr) {
+          console.error('Offline save failed due to storage quota:', storageErr);
+          set({ isLoading: false });
+          throw new Error('Your browser storage is full. Please clear some space to save this order offline.');
+        }
         
         set({ cart: [], isLoading: false });
         return { orderId: tempId, offline: true };
